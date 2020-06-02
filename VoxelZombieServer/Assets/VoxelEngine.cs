@@ -20,7 +20,8 @@ public class VoxelEngine : MonoBehaviour
 
     public BoundaryController bController;
 
-  
+    MapData babel;
+ 
     const ushort MAP_TAG = 4;
     private void Awake()
     {
@@ -56,12 +57,16 @@ public class VoxelEngine : MonoBehaviour
 
         MapData hawaii = new MapData("hawaii", 27075, 1, 67, 43);
         mapList.Add(hawaii);
-   
+
+         babel = new MapData("babel", 17974, 0, 0, 0);
+        mapList.Add(hawaii);
+
     }
 
     public void LoadMap(MapData map)
     {
         UnloadMap();
+
         currentMap = map;
         
         var mapFile = new NbtFile();
@@ -116,41 +121,42 @@ public class VoxelEngine : MonoBehaviour
                     {
                         switch(dataBytes[blockCount])
                         {
+                            //ID - 1 == Material List Index
                             case 0:
-                                toAdd = 21;
+                                toAdd = 36; //0 -> White
                                 break;
                             case 1:
-                                toAdd = 22;
+                                toAdd = 22; //1 -> Orange
                                 break;
                             case 2:
-                                toAdd = 23;
+                                toAdd = 32; //THIS IS WRONG
                                 break;
                             case 3:
-                                toAdd = 24;
+                                toAdd = 22; //THIS IS WRONG
                                 break;
                             case 4:
-                                toAdd = 25;
+                                toAdd = 23; //4 -> Yellow
                                 break;
                             case 5:
-                                toAdd = 26;
+                                toAdd = 26; 
                                 break;
                             case 6:
                                 toAdd = 33;
                                 break;
                             case 7:
-                                toAdd = 27;
+                                toAdd = 27; 
                                 break;
                             case 8:
-                                toAdd = 28;
+                                toAdd = 35; //8 -> Light Gray
                                 break;
                             case 9:
-                                toAdd = 29;
+                                toAdd = 28; //check
                                 break;
                             case 10:
                                 toAdd = 30;
                                 break;
                             case 11:
-                                toAdd = 31;
+                                toAdd = 29; //11 -> Ultramarine
                                 break;
                             case 12:
                                 toAdd = 32;
@@ -159,11 +165,12 @@ public class VoxelEngine : MonoBehaviour
                                 toAdd = 33;
                                 break;
                             case 14:
-                                toAdd = 24;
+                                toAdd = 21; //14 -> Red
                                 break;
                             case 15:
-                                toAdd = 35;
+                                toAdd = 34; //15 -> DarkGray
                                 break;
+                                
                         }
                         mapBytes[blockCount] = toAdd;
                     }
