@@ -16,7 +16,10 @@ public class VoxelClient : MonoBehaviour
     const ushort POSITION_UPDATE_TAG = 5;
     const ushort PLAYER_STATE_TAG = 6;
     const ushort REMOVE_PLAYER_TAG = 7;
+    const ushort MAP_LOADED_TAG = 8;
+    const ushort MAP_RELOADED_TAG = 9;
 
+    bool loadedFirstMap = false;
 
     UnityClient Client;
 
@@ -89,19 +92,52 @@ public class VoxelClient : MonoBehaviour
     {
         using (Message message = e.GetMessage() as Message)
         {
-            
+
             using (DarkRiftReader reader = message.GetReader())
             {
+                /*
                 int Width = reader.ReadInt32();
-                int Length = reader.ReadInt32();             
+                int Length = reader.ReadInt32();
                 int Height = reader.ReadInt32();
                 byte[] mapBytes = reader.ReadBytes();
                 Debug.Log(mapBytes.Length);
                 vEngine.LoadMap(Width, Length, Height, mapBytes);
+                */
+
+                string MapName = reader.ReadString();
+
+                vEngine.LoadMap(MapName);
             }
-            
-            
+
+
         }
+
+        if(!loadedFirstMap)
+        {
+            using (DarkRiftWriter loadedWriter = DarkRiftWriter.Create())
+            {
+                using (Message MapLoadedMessage = Message.Create(MAP_LOADED_TAG, loadedWriter))
+                {
+                    Client.SendMessage(MapLoadedMessage, SendMode.Reliable);
+                    Debug.Log("Sent map loaded message");
+                }
+            }
+            loadedFirstMap = true;
+        }
+        else
+        {
+            using (DarkRiftWriter reloadedWriter = DarkRiftWriter.Create())
+            {
+                using (Message MapReloadedMessage = Message.Create(MAP_RELOADED_TAG, reloadedWriter))
+                {
+                    Client.SendMessage(MapReloadedMessage, SendMode.Reliable);
+                    Debug.Log("Sent map reloaded message");
+
+                }
+            }
+
+        }     
+
 
     }
 
@@ -241,15 +277,20 @@ public class VoxelClient : MonoBehaviour
     {
         using (DarkRiftReader reader = e.GetMessage().GetReader())
         {
-            ushort x = reader.ReadUInt16();
-            ushort y = reader.ReadUInt16();
-            ushort z = reader.ReadUInt16();
 
-            ushort blockTag = reader.ReadUInt16();        
-            world[x, y, z] = blockTag;               
-
-            world.Chunks[ChunkID.FromWorldPos(x, y, z)].dirty = true;
+            int numBlocks = reader.Length / 8;
             
+            for(int i = 0; i < numBlocks; i++)
+            {
+                ushort x = reader.ReadUInt16();
+                ushort y = reader.ReadUInt16();
+                ushort z = reader.ReadUInt16();
+
+                ushort blockTag = reader.ReadUInt16();
+                world[x, y, z] = blockTag;
+
+                world.Chunks[ChunkID.FromWorldPos(x, y, z)].dirty = true;
+            }          
 
         }
     }

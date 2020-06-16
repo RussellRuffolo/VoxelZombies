@@ -31,6 +31,7 @@ public class World
             */
             var chunk = Chunks[ChunkID.FromWorldPos(x, y, z)];
             chunk[x & 0xF, y & 0xF, z & 0xF] = value;
+            chunk.dirty = true;
         }
     }
 }

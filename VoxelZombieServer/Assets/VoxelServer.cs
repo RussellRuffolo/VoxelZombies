@@ -15,6 +15,8 @@ public class VoxelServer : MonoBehaviour
     const ushort POSITION_UPDATE_TAG = 5;
     const ushort PLAYER_STATE_TAG = 6;
     const ushort REMOVE_PLAYER_TAG = 7;
+    const ushort MAP_LOADED_TAG = 8;
+    const ushort MAP_RELOADED_TAG = 9;
 
     XmlUnityServer XMLServer;
     DarkRiftServer Server;
@@ -22,9 +24,12 @@ public class VoxelServer : MonoBehaviour
     ServerPlayerManager PlayerManager;
     ServerGameManager gManager;
 
-    public float PlayerSpeed;
-
     World world;
+
+    //players who have loaded the current map
+    List<IClient> loadedPlayers = new List<IClient>();
+
+    List<BlockEdit> EditedBlocks = new List<BlockEdit>();
 
     private void Awake()
     {
@@ -54,87 +59,25 @@ public class VoxelServer : MonoBehaviour
             stateTag = 1;
         }
         PlayerManager.AddPlayer(e.Client.ID, stateTag, vEngine.currentMap.SpawnX, vEngine.currentMap.SpawnY, vEngine.currentMap.SpawnZ);
-                  
-        using (DarkRiftWriter PlayerWriter = DarkRiftWriter.Create())
-        {
-
-            PlayerWriter.Write(XMLServer.Server.ClientManager.GetAllClients().Length);
-
-
-            //Maybe change this line to a list of player ids that I add/remove on connections/disconnects
-            foreach (IClient playerClient in XMLServer.Server.ClientManager.GetAllClients())
-            {
-                ushort playerID = playerClient.ID;
-
-                
-                Transform playerTransform = PlayerManager.PlayerDictionary[playerID];
-               
-                PlayerWriter.Write(playerID);
-                PlayerWriter.Write(playerTransform.GetComponent<ServerPositionTracker>().stateTag);
-                PlayerWriter.Write(playerTransform.position.x);
-                PlayerWriter.Write(playerTransform.position.y);
-                PlayerWriter.Write(playerTransform.position.z);
-
-                PlayerWriter.Write(playerTransform.rotation.eulerAngles.x);
-                PlayerWriter.Write(playerTransform.rotation.eulerAngles.y);
-                PlayerWriter.Write(playerTransform.rotation.eulerAngles.z);
-
-            }
-
-            using (Message playerMessage = Message.Create(PLAYER_INIT_TAG, PlayerWriter))
-            {
-                e.Client.SendMessage(playerMessage, SendMode.Reliable);
-                Debug.Log("Sent Player Init Message");
-            }
-
-        }
-
-    
-
-        using (DarkRiftWriter NewPlayerWriter = DarkRiftWriter.Create())
-        {          
-
             
-            ushort playerID = e.Client.ID;
-
-            Transform playerTransform = PlayerManager.PlayerDictionary[playerID];
-
-            NewPlayerWriter.Write(playerID);
-            NewPlayerWriter.Write(playerTransform.position.x);
-            NewPlayerWriter.Write(playerTransform.position.y);
-            NewPlayerWriter.Write(playerTransform.position.z);
-
-            NewPlayerWriter.Write(playerTransform.rotation.eulerAngles.x);
-            NewPlayerWriter.Write(playerTransform.rotation.eulerAngles.y);
-            NewPlayerWriter.Write(playerTransform.rotation.eulerAngles.z);
-
-            
-
-            using (Message NewPlayerMessage = Message.Create(ADD_PLAYER_TAG, NewPlayerWriter))
-            {
-                foreach(IClient c in XMLServer.Server.ClientManager.GetAllClients())
-                {
-                    if(c.ID != e.Client.ID)
-                    {
-                        c.SendMessage(NewPlayerMessage, SendMode.Reliable);
-                        Debug.Log("Sent Player Add Message");
-                    }
-                }
-            }
-
-        }
-
+        /*
+        
+        */
         using (DarkRiftWriter mapWriter = DarkRiftWriter.Create())
         {
+
+            mapWriter.Write(vEngine.currentMap.Name);
+            /*
             mapWriter.Write(vEngine.currentMap.Width);
             mapWriter.Write(vEngine.currentMap.Length);
             mapWriter.Write(vEngine.currentMap.Height);
             mapWriter.Write(vEngine.mapBytes);
             Debug.Log(vEngine.mapBytes.Length);
+            */
             using (Message mapMessage = Message.Create(MAP_TAG, mapWriter))
             {
                 e.Client.SendMessage(mapMessage, SendMode.Reliable);
-                Debug.Log("Sent Map Message");
+                //Debug.Log("Sent Map Message");
             }
         }
 
@@ -149,7 +92,7 @@ public class VoxelServer : MonoBehaviour
     {
         ushort playerID = e.Client.ID;
         PlayerManager.RemovePlayer(playerID);
-
+        loadedPlayers.Remove(e.Client);
         using (DarkRiftWriter RemovePlayerWriter = DarkRiftWriter.Create())
         {        
             RemovePlayerWriter.Write(playerID);
@@ -159,7 +102,7 @@ public class VoxelServer : MonoBehaviour
                 foreach (IClient c in XMLServer.Server.ClientManager.GetAllClients())
                 {
                     c.SendMessage(RemovePlayerMessage, SendMode.Reliable);
-                    Debug.Log("Sent Player Remove Message");
+                    //Debug.Log("Sent Player Remove Message");
                 }
             }
         }
@@ -177,36 +120,139 @@ public class VoxelServer : MonoBehaviour
            {
                 ApplyBlockEdit(e);
            }
-        }
-
-    }
-
-    private void Update()
-    {
-        RunPlayerInputs();
-    }
-
-    void RunPlayerInputs()
-    {
-        foreach(IClient c in XMLServer.Server.ClientManager.GetAllClients())
-        {
-            if(PlayerManager.PlayerDictionary.ContainsKey(c.ID))
+           else if(e.Tag == MAP_LOADED_TAG)
             {
-                Transform playerTransform = PlayerManager.PlayerDictionary[c.ID];
-                Rigidbody playerRB = playerTransform.GetComponent<Rigidbody>();
+                InitializePlayer(e);
+            }
+           else if(e.Tag == MAP_RELOADED_TAG)
+            {
+                ReInitializePlayer(e);
+            }
+        }
 
-                PlayerInputs inputs = PlayerManager.InputDictionary[c.ID];
+    }
+    
+    private void InitializePlayer(MessageReceivedEventArgs e)
+    {
+        
+        loadedPlayers.Add(e.Client);
+
+        using (DarkRiftWriter PlayerWriter = DarkRiftWriter.Create())
+        {
+
+            PlayerWriter.Write(loadedPlayers.Count);
+            
+            foreach (IClient playerClient in loadedPlayers)
+            {
+                ushort playerID = playerClient.ID;
 
 
-                float yVel = playerRB.velocity.y;
+                Transform playerTransform = PlayerManager.PlayerDictionary[playerID];
 
-                playerRB.velocity = inputs.moveVector * PlayerSpeed;
-                playerRB.velocity += yVel * Vector3.up;                             
-               
-            }           
-             
+                PlayerWriter.Write(playerID);
+                PlayerWriter.Write(playerTransform.GetComponent<ServerPositionTracker>().stateTag);
+                PlayerWriter.Write(playerTransform.position.x);
+                PlayerWriter.Write(playerTransform.position.y);
+                PlayerWriter.Write(playerTransform.position.z);
+
+                PlayerWriter.Write(playerTransform.rotation.eulerAngles.x);
+                PlayerWriter.Write(playerTransform.rotation.eulerAngles.y);
+                PlayerWriter.Write(playerTransform.rotation.eulerAngles.z);
+
+            }
+
+            using (Message playerMessage = Message.Create(PLAYER_INIT_TAG, PlayerWriter))
+            {
+                e.Client.SendMessage(playerMessage, SendMode.Reliable);
+                //Debug.Log("Sent Player Init Message");
+            }
 
         }
+
+        using (DarkRiftWriter NewPlayerWriter = DarkRiftWriter.Create())
+        {
+
+
+            ushort playerID = e.Client.ID;
+
+            Transform playerTransform = PlayerManager.PlayerDictionary[playerID];
+
+            NewPlayerWriter.Write(playerID);
+            NewPlayerWriter.Write(playerTransform.position.x);
+            NewPlayerWriter.Write(playerTransform.position.y);
+            NewPlayerWriter.Write(playerTransform.position.z);
+
+            NewPlayerWriter.Write(playerTransform.rotation.eulerAngles.x);
+            NewPlayerWriter.Write(playerTransform.rotation.eulerAngles.y);
+            NewPlayerWriter.Write(playerTransform.rotation.eulerAngles.z);
+
+
+
+            using (Message NewPlayerMessage = Message.Create(ADD_PLAYER_TAG, NewPlayerWriter))
+            {
+                foreach (IClient c in loadedPlayers)
+                {
+                    if (c.ID != e.Client.ID)
+                    {
+                        c.SendMessage(NewPlayerMessage, SendMode.Reliable);
+                       // Debug.Log("Sent Player Add Message");
+                    }
+                }
+            }
+
+        }
+
+        using (DarkRiftWriter BlockEditsWriter = DarkRiftWriter.Create())
+        {
+
+            foreach(BlockEdit bEdit in EditedBlocks)
+            {
+                BlockEditsWriter.Write(bEdit.x);
+                BlockEditsWriter.Write(bEdit.y);
+                BlockEditsWriter.Write(bEdit.z);
+                BlockEditsWriter.Write(bEdit.blockTag);
+            }
+        
+
+            using (Message blockEditMessage = Message.Create(BLOCK_EDIT_TAG, BlockEditsWriter))
+            {
+                foreach (IClient c in loadedPlayers)
+                {
+                    c.SendMessage(blockEditMessage, SendMode.Reliable);
+                    //Debug.Log("Sent Block Edit Message");
+                }
+            }
+        }
+
+     
+    }
+
+    private void ReInitializePlayer(MessageReceivedEventArgs e)
+    {
+        loadedPlayers.Add(e.Client);
+        foreach(ushort id in PlayerManager.PlayerDictionary.Keys)
+        {
+            using (DarkRiftWriter positionWriter = DarkRiftWriter.Create())
+            {
+                positionWriter.Write(id);
+
+                Vector3 playerPosition = PlayerManager.PlayerDictionary[id].position;
+
+                positionWriter.Write(playerPosition.x);
+                positionWriter.Write(playerPosition.y);
+                positionWriter.Write(playerPosition.z);
+
+
+                using (Message positionMessage = Message.Create(POSITION_UPDATE_TAG, positionWriter))
+                {
+                    e.Client.SendMessage(positionMessage, SendMode.Unreliable);
+                }
+
+            }
+
+        }
+        
+
     }
 
     void ApplyBlockEdit(MessageReceivedEventArgs e)
@@ -221,7 +267,22 @@ public class VoxelServer : MonoBehaviour
 
             if(world[x, y, z] != blockTag)
             {
+                //check to see if block intersects players
+                Collider[] thingsHit = Physics.OverlapBox(new Vector3(x + .5f, y + .5f, z + .5f), new Vector3(.45f, .45f, .45f));
+
+                foreach(Collider col in thingsHit)
+                {
+                    if(col.CompareTag("Player"))
+                    {
+                        Debug.Log("Hit player");
+                        return;
+                    }
+                }
+
                 world[x, y, z] = blockTag;
+
+                EditedBlocks.Add(new BlockEdit(x, y, z, blockTag));
+
                 vEngine.mapBytes[z + x * vEngine.currentMap.Length + y * vEngine.currentMap.Length * vEngine.currentMap.Width] = (byte)blockTag;
 
                 using (DarkRiftWriter blockWriter = DarkRiftWriter.Create())
@@ -234,10 +295,10 @@ public class VoxelServer : MonoBehaviour
 
                     using (Message blockEditMessage = Message.Create(BLOCK_EDIT_TAG, blockWriter))
                     {
-                        foreach (IClient c in XMLServer.Server.ClientManager.GetAllClients())
+                        foreach (IClient c in loadedPlayers)
                         {
                               c.SendMessage(blockEditMessage, SendMode.Reliable);
-                            Debug.Log("Sent Block Edit Message");
+                            //Debug.Log("Sent Block Edit Message");
                         }
                     }
 
@@ -262,10 +323,10 @@ public class VoxelServer : MonoBehaviour
 
             using (Message positionMessage = Message.Create(POSITION_UPDATE_TAG, positionWriter))
             {
-                foreach (IClient c in XMLServer.Server.ClientManager.GetAllClients())
+                foreach (IClient c in loadedPlayers)
                 {
                     c.SendMessage(positionMessage, SendMode.Unreliable);
-                    Debug.Log("Sent Position Update Message");
+                   // Debug.Log("Sent Position Update Message");
 
                 }
             }
@@ -296,7 +357,7 @@ public class VoxelServer : MonoBehaviour
 
             using (Message positionMessage = Message.Create(PLAYER_STATE_TAG, stateWriter))
             {
-                foreach (IClient c in XMLServer.Server.ClientManager.GetAllClients())
+                foreach (IClient c in loadedPlayers)
                 {
                     c.SendMessage(positionMessage, SendMode.Reliable);
                     Debug.Log("Sent Player State Message");
@@ -314,28 +375,33 @@ public class VoxelServer : MonoBehaviour
             UpdatePlayerState(c.ID, 0);
         }
 
+        Vector3 spawnPosition = new Vector3(vEngine.currentMap.SpawnX, vEngine.currentMap.SpawnY, vEngine.currentMap.SpawnZ);
+
         using (DarkRiftWriter mapWriter = DarkRiftWriter.Create())
         {
+            /*
             mapWriter.Write(vEngine.currentMap.Width);
             mapWriter.Write(vEngine.currentMap.Length);
             mapWriter.Write(vEngine.currentMap.Height);
             mapWriter.Write(vEngine.mapBytes);
-           
+            Debug.Log(vEngine.currentMap.Name);
+            */
+
+            mapWriter.Write(vEngine.currentMap.Name);
+
             using (Message mapMessage = Message.Create(MAP_TAG, mapWriter))
             {
                 foreach (IClient c in XMLServer.Server.ClientManager.GetAllClients())
                 {
                     c.SendMessage(mapMessage, SendMode.Reliable);
+
+                    PlayerManager.PlayerDictionary[c.ID].GetComponent<Rigidbody>().velocity = Vector3.zero;
+                    PlayerManager.PlayerDictionary[c.ID].position = spawnPosition;
+
+                    loadedPlayers.Remove(c);
+                    
                 }
-            }
-
-        }
-
-        Vector3 spawnPosition = new Vector3(vEngine.currentMap.SpawnX, vEngine.currentMap.SpawnY, vEngine.currentMap.SpawnZ);
-
-        foreach (IClient c in XMLServer.Server.ClientManager.GetAllClients())
-        {
-            PlayerManager.PlayerDictionary[c.ID].position = spawnPosition;
+            }  
         }
     }
 
@@ -355,3 +421,23 @@ public class VoxelServer : MonoBehaviour
 
     }
 }
+
+class BlockEdit
+{
+    public ushort x;
+    public ushort y;
+    public ushort z;
+
+    public ushort blockTag;
+
+    public BlockEdit(ushort editX, ushort editY, ushort editZ, ushort newTag)
+    {
+        x = editX;
+        y = editY;
+        z = editZ;
+
+        blockTag = newTag;
+    }
+}
+    
+

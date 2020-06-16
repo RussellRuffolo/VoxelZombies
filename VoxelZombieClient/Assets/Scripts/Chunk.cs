@@ -47,7 +47,13 @@ public class Chunk : MonoBehaviour
         new Vector3 (0, 1, 0),
     };
 
-
+    private Vector3[] _frontHalfVertices = new[]
+    {
+        new Vector3 (0, 0, 0),
+        new Vector3 (1, 0, 0),
+        new Vector3 (1, 0.5f, 0),
+        new Vector3 (0, 0.5f, 0),
+    };
 
     private int[] _frontTriangles = new[]
     {
@@ -63,6 +69,14 @@ public class Chunk : MonoBehaviour
         new Vector3 (1, 1, 1),
     };
 
+    private Vector3[] _topHalfVertices = new[]
+{
+        new Vector3 (1, .5f, 0),
+        new Vector3 (0, .5f, 0),
+        new Vector3 (0, .5f, 1),
+        new Vector3 (1, .5f, 1),
+    };
+
     private int[] _topTriangles = new[]
     {
         0,1,2,
@@ -74,6 +88,14 @@ public class Chunk : MonoBehaviour
         new Vector3 (1, 0, 0),
         new Vector3 (1, 1, 0),
         new Vector3 (1, 1, 1),
+        new Vector3 (1, 0, 1)
+    };
+
+    private Vector3[] _rightHalfVertices = new[]
+{
+        new Vector3 (1, 0, 0),
+        new Vector3 (1, .5f, 0),
+        new Vector3 (1, .5f, 1),
         new Vector3 (1, 0, 1)
     };
 
@@ -91,6 +113,14 @@ public class Chunk : MonoBehaviour
       new Vector3 (0, 0, 1)
     };
 
+    private Vector3[] _leftHalfVertices = new[]
+{
+      new Vector3 (0, 0, 0),
+      new Vector3 (0, .5f, 0),
+      new Vector3 (0, .5f, 1),
+      new Vector3 (0, 0, 1)
+    };
+
     private int[] _leftTriangles = new[]
     {
         0,3,2,
@@ -101,6 +131,14 @@ public class Chunk : MonoBehaviour
    {
         new Vector3 (0, 1, 1),
         new Vector3 (1, 1, 1),
+        new Vector3 (1, 0, 1),
+        new Vector3 (0, 0, 1),
+    };
+
+    private Vector3[] _backHalfVertices = new[]
+{
+        new Vector3 (0, .5f, 1),
+        new Vector3 (1, .5f, 1),
         new Vector3 (1, 0, 1),
         new Vector3 (0, 0, 1),
     };
@@ -125,7 +163,6 @@ public class Chunk : MonoBehaviour
         0,2,3,
         0,1,2
     };
-
 
     private int[] _cubeTriangles = new[] {
         // Front
@@ -161,8 +198,6 @@ public class Chunk : MonoBehaviour
         Vector3.up
     };
 
-
-
     public UInt16 this[int x, int y, int z]
     {
         get
@@ -175,8 +210,15 @@ public class Chunk : MonoBehaviour
         }
     }
 
+    private List<int> _transparentBlockIDs = new List<int>
+    {
+        0, 9, 18,
+        20, 44
+    };
+
     private void Start()
     {
+        this.tag = "Ground";
         for (int i = 0; i < 55; i++)
         {
             TriangleLists[i] = new List<int>();
@@ -222,23 +264,37 @@ public class Chunk : MonoBehaviour
                     // If it is air we ignore this block
                     if (voxelType == 0)
                         continue;
+                    if (voxelType == 9)
+                    {
+                        GameObject waterPrefab = Resources.Load<GameObject>("WaterCube");
+                        GameObject newWater = Instantiate(waterPrefab);
+                        newWater.transform.parent = transform;
+                        newWater.transform.localPosition = new Vector3(x + .5f, y + .5f, z + .5f);
+                        continue;
+                    }
 
                     //RENDER FRONT
                     int front;
                     if (z == 0) { front = 0; } else { front = this[x, y, z - 1]; }
-                    if (front == 0 || front == 18 || front == 20)
+                    if (_transparentBlockIDs.Contains(front))
                     {
-                        foreach (var vert in _frontVertices)
-                            vertices.Add(pos + vert);
+                        if (voxelType == 44)
+                        {
+                            foreach (var vert in _frontHalfVertices)
+                                vertices.Add(pos + vert);
+                        }
+                        else
+                        {
+                            foreach (var vert in _frontVertices)
+                                vertices.Add(pos + vert);
+                        }
 
+                        AddTriangles(voxelType, verticesPos, _frontTriangles);
                         uvList.Add(new Vector2(0, 0));
                         uvList.Add(new Vector2(1, 0));
 
                         uvList.Add(new Vector2(1, 1));
                         uvList.Add(new Vector2(0, 1));
-
-                        AddTriangles(voxelType, verticesPos, _frontTriangles);
-
 
                         foreach (var normal in _faceNormals)
                             normals.Add(normal);
@@ -249,11 +305,21 @@ public class Chunk : MonoBehaviour
                     //RENDER TOP
                     int top;
                     if (y == 15) { top = 0; } else { top = this[x, y + 1, z]; }
-
-                    if (top == 0 || top == 18 || top == 20)
+                    if (top == 44)
+                        top = 0;
+                    if (_transparentBlockIDs.Contains(top))
                     {
-                        foreach (var vert in _topVertices)
-                            vertices.Add(pos + vert);
+                        if (voxelType == 44)
+                        {
+                            foreach (var vert in _topHalfVertices)
+                                vertices.Add(pos + vert);
+                        }
+                        else
+                        {
+                            foreach (var vert in _topVertices)
+                                vertices.Add(pos + vert);
+                        }
+
 
                         uvList.Add(new Vector2(0, 0));
                         uvList.Add(new Vector2(0, 1));
@@ -273,10 +339,21 @@ public class Chunk : MonoBehaviour
                     int right;
                     if (x == 15) { right = 0; } else { right = this[x + 1, y, z]; }
 
-                    if (right == 0 || right == 18 || right == 20)
+                    if (_transparentBlockIDs.Contains(right))
                     {
-                        foreach (var vert in _rightVertices)
-                            vertices.Add(pos + vert);
+                        if (voxelType == 44)
+                        {
+                            foreach (var vert in _rightHalfVertices)
+                                vertices.Add(pos + vert);
+                        }
+                        else
+                        {
+                            foreach (var vert in _rightVertices)
+                                vertices.Add(pos + vert);
+                        }
+
+
+
 
                         uvList.Add(new Vector2(0, 0));
                         uvList.Add(new Vector2(0, 1));
@@ -296,10 +373,19 @@ public class Chunk : MonoBehaviour
                     int left;
                     if (x == 0) { left = 0; } else { left = this[x - 1, y, z]; }
 
-                    if (left == 0 || left == 18 || left == 20)
+                    if (_transparentBlockIDs.Contains(left))
                     {
-                        foreach (var vert in _leftVertices)
-                            vertices.Add(pos + vert);
+                        if (voxelType == 44)
+                        {
+                            foreach (var vert in _leftHalfVertices)
+                                vertices.Add(pos + vert);
+                        }
+                        else
+                        {
+                            foreach (var vert in _leftVertices)
+                                vertices.Add(pos + vert);
+                        }
+
 
                         uvList.Add(new Vector2(0, 0));
                         uvList.Add(new Vector2(0, 1));
@@ -318,10 +404,19 @@ public class Chunk : MonoBehaviour
                     int back;
                     if (z == 15) { back = 0; } else { back = this[x, y, z + 1]; }
 
-                    if (back == 0 || back == 18 || back == 20)
+                    if (_transparentBlockIDs.Contains(back))
                     {
-                        foreach (var vert in _backVertices)
-                            vertices.Add(pos + vert);
+                        if (voxelType == 44)
+                        {
+                            foreach (var vert in _backHalfVertices)
+                                vertices.Add(pos + vert);
+                        }
+                        else
+                        {
+                            foreach (var vert in _backVertices)
+                                vertices.Add(pos + vert);
+                        }
+
 
                         uvList.Add(new Vector2(1, 1));
                         uvList.Add(new Vector2(0, 1));
@@ -342,7 +437,7 @@ public class Chunk : MonoBehaviour
                     int bottom;
                     if (y == 0) { bottom = 0; } else { bottom = this[x, y - 1, z]; }
 
-                    if (bottom == 0 || bottom == 18 || bottom == 20)
+                    if (_transparentBlockIDs.Contains(bottom))
                     {
                         foreach (var vert in _bottomVertices)
                             vertices.Add(pos + vert);
@@ -374,6 +469,7 @@ public class Chunk : MonoBehaviour
         mesh.SetUVs(0, uvList);
         meshFilter.mesh = mesh;
         meshCollider.sharedMesh = mesh;
+
         dirty = false;
     }
 
@@ -412,6 +508,18 @@ public class Chunk : MonoBehaviour
                 }
                 break;
             case (43):
+                if (triangles == _topTriangles || triangles == _bottomTriangles)
+                {
+                    foreach (var tri in triangles)
+                        TriangleLists[51].Add(vPos + tri);
+                }
+                else
+                {
+                    foreach (var tri in triangles)
+                        TriangleLists[vType - 1].Add(vPos + tri);
+                }
+                break;
+            case (44): //half slabs             
                 if (triangles == _topTriangles || triangles == _bottomTriangles)
                 {
                     foreach (var tri in triangles)

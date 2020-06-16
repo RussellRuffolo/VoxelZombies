@@ -11,7 +11,12 @@ public class ServerPlayerManager : MonoBehaviour
     public Dictionary<ushort, Transform> PlayerDictionary = new Dictionary<ushort, Transform>();
     public Dictionary<ushort, PlayerInputs> InputDictionary = new Dictionary<ushort, PlayerInputs>();
 
-    public float JumpSpeed = 5.2f;
+    public float PlayerSpeed;
+    public float JumpSpeed;
+    public float gravAcceleration;
+
+    public float horizontalWaterSpeed;
+    public float verticalWaterSpeed;
 
     public void AddPlayer(ushort PlayerID, ushort stateTag, int xPos, int yPos, int zPos)
     {
@@ -46,22 +51,80 @@ public class ServerPlayerManager : MonoBehaviour
             bool Jump = reader.ReadBoolean();
 
             InputDictionary[clientID].moveVector = moveVector;
-            if(Jump)
-            {              
-            
-                if (Physics.Raycast(targetPlayer.position, Vector3.down, 1.05f))
-                {
-                    
-                    playerRB.AddForce(Vector3.up * JumpSpeed, ForceMode.Impulse);
-                }
-                
-            }
-            InputDictionary[clientID].Jump = Jump;
-
-      
+       
+            InputDictionary[clientID].Jump = Jump;    
 
             
         }
+    }
+
+    private void Update()
+    {
+        RunInputs();
+
+    }
+
+    private void RunInputs()
+    {
+
+        foreach(ushort id in PlayerDictionary.Keys)
+        {
+            Transform playerTransform = PlayerDictionary[id];
+            Rigidbody playerRB = playerTransform.GetComponent<Rigidbody>();
+
+            PlayerInputs inputs = InputDictionary[id];
+
+
+            float yVel = playerRB.velocity.y;
+
+            if(inputs.moveState == 0) //normal movement
+            {
+                bool onGround = false;
+                RaycastHit[] hitData = Physics.RaycastAll(playerTransform.position, Vector3.down, 1.05f);
+
+                foreach (RaycastHit hData in hitData)
+                {
+                    if (hData.collider.CompareTag("Ground"))
+                    {
+                        onGround = true;
+                    }
+                }
+
+                if (onGround)
+                {
+                    if (inputs.Jump)
+                    {
+                        yVel = JumpSpeed;
+                    }
+
+                }
+                else
+                {
+                    yVel -= gravAcceleration * Time.deltaTime;
+                }
+
+                playerRB.velocity = inputs.moveVector * PlayerSpeed;
+                playerRB.velocity += yVel * Vector3.up;
+
+            }
+            else if(inputs.moveState == 1) //water movement
+            {
+                if(inputs.Jump)
+                {
+                    yVel = verticalWaterSpeed;
+                }
+                else
+                {
+                    yVel = -verticalWaterSpeed;
+                }
+
+                playerRB.velocity = inputs.moveVector * horizontalWaterSpeed;
+                playerRB.velocity += yVel * Vector3.up;
+            }
+
+        }
+        
+     
     }
 
 
@@ -72,9 +135,13 @@ public class PlayerInputs
     public Vector3 moveVector;
     public bool Jump;
 
+    //0 is normal, 1 is water, 2 is lava
+    public ushort moveState;
+
     public PlayerInputs(Vector3 moveVec, bool jump)
     {
         moveVector = moveVec;
         Jump = jump;
+        moveState = 0;
     }
 }

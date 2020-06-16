@@ -39,6 +39,19 @@ public class ServerGameManager : MonoBehaviour
         StartCoroutine(startDelay());
     }
 
+    public void EndRound(bool HumansWin)
+    {
+        if(HumansWin)
+        {
+
+        }
+        else
+        {
+
+        }
+
+    }
+
     private void Update()
     {
         if(RoundTime > 0)
@@ -54,6 +67,20 @@ public class ServerGameManager : MonoBehaviour
     public void SubtractTime()
     {
         RoundTime -= 60;
+    }
+
+    public void CheckZombieWin()
+    {
+        foreach(Transform playerTransform in pMananger.PlayerDictionary.Values)
+        {
+            if(playerTransform.GetComponent<ServerPositionTracker>().stateTag == 0)
+            {
+                //If a player is a human return- zombies haven't won yet
+                return;
+            }
+        }
+
+        //if no players were human then zombies win
     }
 
     IEnumerator startDelay()

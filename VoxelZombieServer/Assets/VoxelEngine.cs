@@ -20,19 +20,19 @@ public class VoxelEngine : MonoBehaviour
 
     public BoundaryController bController;
 
-    MapData babel;
+    
  
     const ushort MAP_TAG = 4;
     private void Awake()
     {
-        MapData EightBit = new MapData("8Bit", 7563, 42, 240, 14);
-        mapList.Add(EightBit);
+        //MapData EightBit = new MapData("8Bit", 7563, 42, 240, 14);
+       // mapList.Add(EightBit);
 
-        MapData ThreeSixty = new MapData("360", 7013, 48, 13, 25);
-        mapList.Add(ThreeSixty);
+       // MapData ThreeSixty = new MapData("360", 7013, 48, 13, 25);
+       // mapList.Add(ThreeSixty);
 
-        MapData runrunrun = new MapData("runrunrun", 8212, 3, 7, 63);
-        mapList.Add(runrunrun);
+        //MapData runrunrun = new MapData("runrunrun", 8212, 3, 7, 63);
+       // mapList.Add(runrunrun);
 
         MapData Asylum = new MapData("asylum", 7002, 25, 129, 30);
         mapList.Add(Asylum);
@@ -40,31 +40,32 @@ public class VoxelEngine : MonoBehaviour
         MapData Carson = new MapData("carson", 26219, 10, 35, 120);
         mapList.Add(Carson);
 
-        MapData Pandoras_Box = new MapData("pandoras_box", 24293, 2, 67, 64);
-        mapList.Add(Pandoras_Box);
+       // MapData Pandoras_Box = new MapData("pandoras_box", 24293, 2, 67, 64);
+      //  mapList.Add(Pandoras_Box);
 
-        MapData school = new MapData("school", 24293, 122, 68, 68);
-        mapList.Add(school);
+       // MapData school = new MapData("school", 24293, 122, 68, 68);
+       // mapList.Add(school);
 
-        MapData yggdrasil = new MapData("yggdrasil", 16771, 60, 3, 3);
-        mapList.Add(yggdrasil);
+       // MapData yggdrasil = new MapData("yggdrasil", 16771, 60, 3, 3);
+       // mapList.Add(yggdrasil);
 
         MapData Sunspots = new MapData("Sunspots", 69943, 60, 112, 108);
         mapList.Add(Sunspots);
 
-        MapData AquaMansion = new MapData("aquamansion", 10228, 2, 34, 60);
-        mapList.Add(AquaMansion);
+       // MapData AquaMansion = new MapData("aquamansion", 10228, 2, 34, 60);
+       // mapList.Add(AquaMansion);
 
         MapData hawaii = new MapData("hawaii", 27075, 1, 67, 43);
         mapList.Add(hawaii);
 
-         babel = new MapData("babel", 17974, 0, 0, 0);
-        mapList.Add(hawaii);
+       // MapData babel = new MapData("babel", 17974, 0, 0, 0);
+       // mapList.Add(hawaii);
 
     }
 
     public void LoadMap(MapData map)
     {
+    
         UnloadMap();
 
         currentMap = map;

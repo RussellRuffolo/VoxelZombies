@@ -64,8 +64,6 @@ public class ClientPlayerController : MonoBehaviour
 
     void MovementInput()
     {
-        bool jump = false;
-
         Vector3 playerForward = new Vector3(transform.forward.x, 0, transform.forward.z);
         Vector3 playerRight =  Quaternion.AngleAxis(90, Vector3.up) * playerForward;
         Vector3 speedVector = Vector3.zero;
@@ -86,16 +84,8 @@ public class ClientPlayerController : MonoBehaviour
             speedVector -= new Vector3(playerForward.x, 0, playerForward.z);
         }
 
-        //rb.velocity = speedVector * speed;
-        //rb.velocity += yVel * Vector3.up;
 
-
-
-        if (Input.GetKeyDown(KeyCode.Space))
-        {
-            jump = true;          
-                
-        }
+        bool jump = Input.GetKey(KeyCode.Space);     
 
         if(speedVector != lastMoveVector || jump != lastJump)
         {

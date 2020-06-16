@@ -11,16 +11,19 @@ public class ServerPositionTracker : MonoBehaviour
     public ushort stateTag;
 
     VoxelServer vServer;
+    ServerPlayerManager pManager;
 
     private void Awake()
     {
         lastPosition = transform.position;
         vServer = GameObject.FindGameObjectWithTag("Network").GetComponent<VoxelServer>();
+        pManager = GameObject.FindGameObjectWithTag("Network").GetComponent<ServerPlayerManager>();
     }
 
     private void Update()
-    {
-        if(Vector3.Distance(lastPosition, transform.position) > minMoveDelta)
+    {    
+
+        if (Vector3.Distance(lastPosition, transform.position) > minMoveDelta)
         {
             vServer.SendPositionUpdate(ID, transform.position);
             lastPosition = transform.position;
@@ -43,6 +46,23 @@ public class ServerPositionTracker : MonoBehaviour
 
             }
      
+        }
+     
+    }
+
+    private void OnTriggerEnter(Collider other)
+    {
+        if(other.CompareTag("Water"))
+        {
+            pManager.InputDictionary[ID].moveState = 1;
+        }
+    }
+
+    private void OnTriggerExit(Collider other)
+    {
+        if (other.CompareTag("Water"))
+        {
+            pManager.InputDictionary[ID].moveState = 0;
         }
     }
 }
