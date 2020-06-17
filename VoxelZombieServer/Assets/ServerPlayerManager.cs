@@ -79,17 +79,8 @@ public class ServerPlayerManager : MonoBehaviour
 
             if(inputs.moveState == 0) //normal movement
             {
-                bool onGround = false;
-                RaycastHit[] hitData = Physics.RaycastAll(playerTransform.position, Vector3.down, 1.05f);
-
-                foreach (RaycastHit hData in hitData)
-                {
-                    if (hData.collider.CompareTag("Ground"))
-                    {
-                        onGround = true;
-                    }
-                }
-
+                bool onGround = playerTransform.GetComponent<HalfBlockDetector>().grounded;
+           
                 if (onGround)
                 {
                     if (inputs.Jump)

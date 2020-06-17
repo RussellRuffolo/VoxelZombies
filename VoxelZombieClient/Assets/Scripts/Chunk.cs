@@ -264,14 +264,16 @@ public class Chunk : MonoBehaviour
                     // If it is air we ignore this block
                     if (voxelType == 0)
                         continue;
-                    if (voxelType == 9)
+                    /*
+                    if(voxelType == 9)
                     {
-                        GameObject waterPrefab = Resources.Load<GameObject>("WaterCube");
+                        GameObject waterPrefab = Resources.Load<GameObject>("WaterTop");
                         GameObject newWater = Instantiate(waterPrefab);
                         newWater.transform.parent = transform;
                         newWater.transform.localPosition = new Vector3(x + .5f, y + .5f, z + .5f);
                         continue;
                     }
+                    */
 
                     //RENDER FRONT
                     int front;

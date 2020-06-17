@@ -264,19 +264,21 @@ public class Chunk : MonoBehaviour
                     // If it is air we ignore this block
                     if (voxelType == 0)
                         continue;
+                    
                     if(voxelType == 9)
                     {
-                        GameObject waterPrefab = Resources.Load<GameObject>("WaterCube");
+                        GameObject waterPrefab = Resources.Load<GameObject>("WaterTop");
                         GameObject newWater = Instantiate(waterPrefab);
                         newWater.transform.parent = transform;
                         newWater.transform.localPosition = new Vector3(x + .5f, y + .5f, z + .5f);
                         continue;
                     }
+                    
 
                     //RENDER FRONT
                     int front;
                     if (z == 0) { front = 0; } else { front = this[x, y, z - 1]; }
-                    if (_transparentBlockIDs.Contains(front))
+                    if (_transparentBlockIDs.Contains(front) && front != voxelType)
                     {
                         if (voxelType == 44)
                         {
@@ -307,7 +309,7 @@ public class Chunk : MonoBehaviour
                     if (y == 15) { top = 0; } else { top = this[x, y + 1, z]; }
                     if (top == 44)
                         top = 0;
-                    if (_transparentBlockIDs.Contains(top))
+                    if (_transparentBlockIDs.Contains(top) && top != voxelType)
                     {
                         if (voxelType == 44)
                         {
@@ -339,7 +341,7 @@ public class Chunk : MonoBehaviour
                     int right;
                     if (x == 15) { right = 0; } else { right = this[x + 1, y, z]; }
 
-                    if (_transparentBlockIDs.Contains(right))
+                    if (_transparentBlockIDs.Contains(right) && right != voxelType)
                     {
                         if (voxelType == 44)
                         {
@@ -373,7 +375,7 @@ public class Chunk : MonoBehaviour
                     int left;
                     if (x == 0) { left = 0; } else { left = this[x - 1, y, z]; }
 
-                    if (_transparentBlockIDs.Contains(left))
+                    if (_transparentBlockIDs.Contains(left) && left != voxelType)
                     {
                         if (voxelType == 44)
                         {
@@ -404,7 +406,7 @@ public class Chunk : MonoBehaviour
                     int back;
                     if (z == 15) { back = 0; } else { back = this[x, y, z + 1]; }
 
-                    if (_transparentBlockIDs.Contains(back))
+                    if (_transparentBlockIDs.Contains(back) && back != voxelType)
                     {
                         if (voxelType == 44)
                         {
@@ -437,7 +439,7 @@ public class Chunk : MonoBehaviour
                     int bottom;
                     if (y == 0) { bottom = 0; } else { bottom = this[x, y - 1, z]; }
 
-                    if (_transparentBlockIDs.Contains(bottom))
+                    if (_transparentBlockIDs.Contains(bottom) && bottom != voxelType)
                     {
                         foreach (var vert in _bottomVertices)
                             vertices.Add(pos + vert);
@@ -469,7 +471,7 @@ public class Chunk : MonoBehaviour
         mesh.SetUVs(0, uvList);
         meshFilter.mesh = mesh;
         meshCollider.sharedMesh = mesh;
-
+        
         dirty = false;
     }
 

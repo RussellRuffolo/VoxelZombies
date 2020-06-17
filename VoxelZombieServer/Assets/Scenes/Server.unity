@@ -497,8 +497,8 @@ MonoBehaviour:
   PlayerSpeed: 5
   JumpSpeed: 7
   gravAcceleration: 20
-  horizontalWaterSpeed: 3
-  verticalWaterSpeed: 3
+  horizontalWaterSpeed: 1.5
+  verticalWaterSpeed: 1.5
 --- !u!114 &835489453
 MonoBehaviour:
   m_ObjectHideFlags: 0

@@ -18,28 +18,51 @@ public class HalfBlockDetector : MonoBehaviour
     private List<ContactPoint> allCPs = new List<ContactPoint>();
     private Vector3 lastVelocity;
 
+    bool steppingUp = false;
+    Vector3 halfStepOffset;
+
+    public bool grounded = false;
+
     void FixedUpdate()
     {
         Vector3 velocity = this.GetComponent<Rigidbody>().velocity;
 
-        //Filter through the ContactPoints to see if we're grounded and to see if we can step up
-        ContactPoint groundCP = default(ContactPoint);
-        bool grounded = FindGround(out groundCP, allCPs);
-
-        Vector3 stepUpOffset = default(Vector3);
-        bool stepUp = false;
-        if (grounded)
-            stepUp = FindStep(out stepUpOffset, allCPs, groundCP, velocity);
-
-        //Steps
-        if (stepUp)
+        if (!steppingUp)
         {
-            this.GetComponent<Rigidbody>().position += stepUpOffset;
+            //Filter through the ContactPoints to see if we're grounded and to see if we can step up
+            ContactPoint groundCP = default(ContactPoint);
+            grounded = FindGround(out groundCP, allCPs);
+
+            Vector3 stepUpOffset = default(Vector3);
+            bool stepUp = false;
+            if (grounded)
+                stepUp = FindStep(out stepUpOffset, allCPs, groundCP, velocity);
+
+            //Steps
+            if (stepUp)
+            {
+                steppingUp = true;
+                halfStepOffset = .5f * stepUpOffset;
+                //this.GetComponent<Rigidbody>().position += stepUpOffset;
+                this.GetComponent<Rigidbody>().position += halfStepOffset;
+                this.GetComponent<Rigidbody>().velocity = lastVelocity;
+            }
+
+            allCPs.Clear();
+            lastVelocity = velocity;
+        }
+        else
+        {
+            grounded = false;
+            this.GetComponent<Rigidbody>().position += halfStepOffset;
             this.GetComponent<Rigidbody>().velocity = lastVelocity;
+
+            steppingUp = false;
+
         }
 
-        allCPs.Clear();
-        lastVelocity = velocity;
+           
+        
     }
 
     void OnCollisionEnter(Collision col)
