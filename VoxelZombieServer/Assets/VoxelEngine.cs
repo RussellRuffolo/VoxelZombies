@@ -19,9 +19,9 @@ public class VoxelEngine : MonoBehaviour
    
 
     public BoundaryController bController;
+    public WaterEngine wEngine;
 
-    
- 
+   
     const ushort MAP_TAG = 4;
     private void Awake()
     {
@@ -58,14 +58,17 @@ public class VoxelEngine : MonoBehaviour
         MapData hawaii = new MapData("hawaii", 27075, 1, 67, 43);
         mapList.Add(hawaii);
 
-       // MapData babel = new MapData("babel", 17974, 0, 0, 0);
-       // mapList.Add(hawaii);
+        mapList.Add(hawaii);
 
+        // MapData babel = new MapData("babel", 17974, 0, 0, 0);
+        // mapList.Add(babel);
+
+        
     }
 
     public void LoadMap(MapData map)
     {
-    
+     
         UnloadMap();
 
         currentMap = map;
@@ -175,13 +178,17 @@ public class VoxelEngine : MonoBehaviour
                         }
                         mapBytes[blockCount] = toAdd;
                     }
+                    else if(toAdd == 9) //9 is water
+                    {
+                        wEngine.AddWater(new VoxelCoordinate(x, y, z));
+                    }
                    
-                    world[x, y, z] = toAdd;
+                     world[x, y, z] = toAdd;
                      blockCount++;                           
                 }
             }
         }
-
+        wEngine.RenderWater();
     }
     
     public  void UnloadMap()
@@ -214,10 +221,43 @@ public class MapData
     public MapData(string name, int numBytes, int spawnX, int spawnY, int spawnZ)
     {
         Name = name;
-        NumBytes = numBytes;
+        //NumBytes = numBytes;
 
         SpawnX = spawnX;
         SpawnY = spawnY;
         SpawnZ = spawnZ;
     }
  }
+
+public class VoxelCoordinate
+{  
+
+    public int x;
+    public int y;
+    public int z;
+
+    public VoxelCoordinate(int xPos,  int yPos, int zPos)
+    {
+        x = xPos;
+        y = yPos;
+        z = zPos;
+    }
+
+    public override bool Equals(object obj)
+    {
+        if(obj is VoxelCoordinate)
+        {
+            VoxelCoordinate testObj = (VoxelCoordinate)obj;
+            if(testObj.x == x && testObj.y == y && testObj.z == z)
+            {
+                return true;
+            }
+        }
+        return false;
+    }
+
+    public Vector3 WorldPosition()
+    {
+        return new Vector3(x, y, z);
+    }
+}

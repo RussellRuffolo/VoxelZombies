@@ -13,11 +13,14 @@ public class ServerPositionTracker : MonoBehaviour
     VoxelServer vServer;
     ServerPlayerManager pManager;
 
+    private World world;
+
     private void Awake()
     {
         lastPosition = transform.position;
         vServer = GameObject.FindGameObjectWithTag("Network").GetComponent<VoxelServer>();
         pManager = GameObject.FindGameObjectWithTag("Network").GetComponent<ServerPlayerManager>();
+        world = GameObject.FindGameObjectWithTag("Network").GetComponent<VoxelEngine>().world;
     }
 
     private void Update()
@@ -54,6 +57,7 @@ public class ServerPositionTracker : MonoBehaviour
     {
         if(other.CompareTag("Water"))
         {
+            Debug.Log("In water");
             pManager.InputDictionary[ID].moveState = 1;
         }
     }
@@ -62,7 +66,15 @@ public class ServerPositionTracker : MonoBehaviour
     {
         if (other.CompareTag("Water"))
         {
-            pManager.InputDictionary[ID].moveState = 0;
+            Vector3 feetPosition = new Vector3(transform.position.x, transform.position.y - .75f, transform.position.z);
+            Vector3 headPosition = new Vector3(transform.position.x, transform.position.y - .75f, transform.position.z);
+
+            if(world[Mathf.FloorToInt(feetPosition.x), Mathf.FloorToInt(feetPosition.y), Mathf.FloorToInt(feetPosition.z)] != 9 && world[Mathf.FloorToInt(headPosition.x), Mathf.FloorToInt(headPosition.y), Mathf.FloorToInt(headPosition.z)] != 9)
+            {
+                Debug.Log("Out of water");
+                pManager.InputDictionary[ID].moveState = 0;
+            }
+              
         }
     }
 }

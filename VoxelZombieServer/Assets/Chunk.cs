@@ -128,7 +128,7 @@ public class Chunk : MonoBehaviour
     };
 
     private Vector3[] _backVertices = new[]
-   {
+    {
         new Vector3 (0, 1, 1),
         new Vector3 (1, 1, 1),
         new Vector3 (1, 0, 1),
@@ -136,7 +136,7 @@ public class Chunk : MonoBehaviour
     };
 
     private Vector3[] _backHalfVertices = new[]
-{
+    {
         new Vector3 (0, .5f, 1),
         new Vector3 (1, .5f, 1),
         new Vector3 (1, 0, 1),
@@ -151,7 +151,7 @@ public class Chunk : MonoBehaviour
     };
 
     private Vector3[] _bottomVertices = new[]
-   {
+    {
        new Vector3 (0, 0, 0),
        new Vector3 (1, 0, 0),
        new Vector3 (1, 0, 1),
@@ -193,7 +193,7 @@ public class Chunk : MonoBehaviour
     };
 
     private static Vector3[] _faceNormals = new[]
- {
+    {
         Vector3.up,Vector3.up,Vector3.up,
         Vector3.up
     };
@@ -267,10 +267,10 @@ public class Chunk : MonoBehaviour
                     
                     if(voxelType == 9)
                     {
-                        GameObject waterPrefab = Resources.Load<GameObject>("WaterTop");
-                        GameObject newWater = Instantiate(waterPrefab);
-                        newWater.transform.parent = transform;
-                        newWater.transform.localPosition = new Vector3(x + .5f, y + .5f, z + .5f);
+                       // GameObject waterPrefab = Resources.Load<GameObject>("WaterTop");
+                       // GameObject newWater = Instantiate(waterPrefab);
+                       // newWater.transform.parent = transform;
+                       // newWater.transform.localPosition = new Vector3(x + .5f, y + .5f, z + .5f);
                         continue;
                     }
                     

@@ -111,7 +111,7 @@ public class ClientBlockEditor : MonoBehaviour
 
     void ShowSelection()
     {
-        RaycastHit[] hitData = Physics.RaycastAll(playerCam.transform.position, playerCam.transform.forward, editDistance);
+        RaycastHit[] hitData = Physics.RaycastAll(playerCam.transform.position -  playerCam.transform.forward, playerCam.transform.forward, editDistance);
 
         foreach (RaycastHit hit in hitData)
         {

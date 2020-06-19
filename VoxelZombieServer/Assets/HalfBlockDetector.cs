@@ -48,9 +48,9 @@ public class HalfBlockDetector : MonoBehaviour
                 this.GetComponent<Rigidbody>().velocity = lastVelocity;
             }
 
-            allCPs.Clear();
-            lastVelocity = velocity;
+            
         }
+        
         else
         {
             grounded = false;
@@ -60,9 +60,10 @@ public class HalfBlockDetector : MonoBehaviour
             steppingUp = false;
 
         }
+       
+        allCPs.Clear();
+        lastVelocity = velocity;
 
-           
-        
     }
 
     void OnCollisionEnter(Collision col)

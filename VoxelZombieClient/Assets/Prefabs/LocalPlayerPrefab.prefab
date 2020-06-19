@@ -160,7 +160,7 @@ LineRenderer:
   - {x: 0, y: 0, z: 1}
   m_Parameters:
     serializedVersion: 3
-    widthMultiplier: 0.05
+    widthMultiplier: 0.03
     widthCurve:
       serializedVersion: 2
       m_Curve:
@@ -224,6 +224,7 @@ GameObject:
   - component: {fileID: 8676816057336953763}
   - component: {fileID: 4288658257050309169}
   - component: {fileID: 5707717953804610842}
+  - component: {fileID: 686885547104722890}
   m_Layer: 0
   m_Name: Camera
   m_TagString: Untagged
@@ -296,3 +297,15 @@ AudioListener:
   m_PrefabAsset: {fileID: 0}
   m_GameObject: {fileID: 7198119557326670883}
   m_Enabled: 1
+--- !u!114 &686885547104722890
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 7198119557326670883}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 38b0526345ff62e43a512815e058beac, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 

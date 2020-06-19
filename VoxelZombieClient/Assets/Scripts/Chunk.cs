@@ -277,61 +277,70 @@ public class Chunk : MonoBehaviour
 
                     //RENDER FRONT
                     int front;
-                    if (z == 0) { front = 0; } else { front = this[x, y, z - 1]; }
+                    if (z == 0) { if (voxelType == 9) { front = world[x, y, z - 1]; } else { front = 0; } } else { front = this[x, y, z - 1]; }
                     if (_transparentBlockIDs.Contains(front))
                     {
-                        if (voxelType == 44)
+                        if(voxelType != 9 || (voxelType == 9 && front != 9))
                         {
-                            foreach (var vert in _frontHalfVertices)
-                                vertices.Add(pos + vert);
+                            if (voxelType == 44)
+                            {
+                                foreach (var vert in _frontHalfVertices)
+                                    vertices.Add(pos + vert);
+                            }
+                            else
+                            {
+                                foreach (var vert in _frontVertices)
+                                    vertices.Add(pos + vert);
+                            }
+
+                            AddTriangles(voxelType, verticesPos, _frontTriangles);
+                            uvList.Add(new Vector2(0, 0));
+                            uvList.Add(new Vector2(1, 0));
+
+                            uvList.Add(new Vector2(1, 1));
+                            uvList.Add(new Vector2(0, 1));
+
+                            foreach (var normal in _faceNormals)
+                                normals.Add(normal);
+
                         }
-                        else
-                        {
-                            foreach (var vert in _frontVertices)
-                                vertices.Add(pos + vert);
-                        }
-
-                        AddTriangles(voxelType, verticesPos, _frontTriangles);
-                        uvList.Add(new Vector2(0, 0));
-                        uvList.Add(new Vector2(1, 0));
-
-                        uvList.Add(new Vector2(1, 1));
-                        uvList.Add(new Vector2(0, 1));
-
-                        foreach (var normal in _faceNormals)
-                            normals.Add(normal);
+                    
                     }
 
                     verticesPos = vertices.Count;
 
                     //RENDER TOP
                     int top;
-                    if (y == 15) { top = 0; } else { top = this[x, y + 1, z]; }
+                    if (y == 15) { if (voxelType == 9) { top = world[Mathf.FloorToInt(transform.position.x) + x, Mathf.FloorToInt(transform.position.y) + y + 1, Mathf.FloorToInt(transform.position.z) + z]; Debug.Log("Above water the voxeltype was: " + top); } else { top = 0; } } else { top = this[x, y + 1, z]; }
                     if (top == 44)
                         top = 0;
                     if (_transparentBlockIDs.Contains(top))
                     {
-                        if (voxelType == 44)
+                        if (voxelType != 9 || (voxelType == 9 && top != 9))
                         {
-                            foreach (var vert in _topHalfVertices)
-                                vertices.Add(pos + vert);
+                            if (voxelType == 44)
+                            {
+                                foreach (var vert in _topHalfVertices)
+                                    vertices.Add(pos + vert);
+                            }
+                            else
+                            {
+                                foreach (var vert in _topVertices)
+                                    vertices.Add(pos + vert);
+                            }
+
+
+                            uvList.Add(new Vector2(0, 0));
+                            uvList.Add(new Vector2(0, 1));
+                            uvList.Add(new Vector2(1, 1));
+                            uvList.Add(new Vector2(1, 0));
+
+                            AddTriangles(voxelType, verticesPos, _topTriangles);
+
+                            foreach (var normal in _faceNormals)
+                                normals.Add(normal);
                         }
-                        else
-                        {
-                            foreach (var vert in _topVertices)
-                                vertices.Add(pos + vert);
-                        }
-
-
-                        uvList.Add(new Vector2(0, 0));
-                        uvList.Add(new Vector2(0, 1));
-                        uvList.Add(new Vector2(1, 1));
-                        uvList.Add(new Vector2(1, 0));
-
-                        AddTriangles(voxelType, verticesPos, _topTriangles);
-
-                        foreach (var normal in _faceNormals)
-                            normals.Add(normal);
+                   
 
                     }
 
@@ -339,33 +348,35 @@ public class Chunk : MonoBehaviour
 
                     //RENDER RIGHT
                     int right;
-                    if (x == 15) { right = 0; } else { right = this[x + 1, y, z]; }
+                    if (x == 15) { if (voxelType == 9) { right = world[x + 1, y, z]; } else { right = 0; } } else { right = this[x + 1, y, z]; }
 
                     if (_transparentBlockIDs.Contains(right))
                     {
-                        if (voxelType == 44)
+                        if (voxelType != 9 || (voxelType == 9 && right != 9))
                         {
-                            foreach (var vert in _rightHalfVertices)
-                                vertices.Add(pos + vert);
+                            if (voxelType == 44)
+                            {
+                                foreach (var vert in _rightHalfVertices)
+                                    vertices.Add(pos + vert);
+                            }
+                            else
+                            {
+                                foreach (var vert in _rightVertices)
+                                    vertices.Add(pos + vert);
+                            }                           
+
+                            uvList.Add(new Vector2(0, 0));
+                            uvList.Add(new Vector2(0, 1));
+                            uvList.Add(new Vector2(1, 1));
+                            uvList.Add(new Vector2(1, 0));
+                            AddTriangles(voxelType, verticesPos, _rightTriangles);
+
+
+                            foreach (var normal in _faceNormals)
+                                normals.Add(normal);
+
+
                         }
-                        else
-                        {
-                            foreach (var vert in _rightVertices)
-                                vertices.Add(pos + vert);
-                        }
-
-
-
-
-                        uvList.Add(new Vector2(0, 0));
-                        uvList.Add(new Vector2(0, 1));
-                        uvList.Add(new Vector2(1, 1));
-                        uvList.Add(new Vector2(1, 0));
-                        AddTriangles(voxelType, verticesPos, _rightTriangles);
-
-
-                        foreach (var normal in _faceNormals)
-                            normals.Add(normal);
 
                     }
 
@@ -373,30 +384,34 @@ public class Chunk : MonoBehaviour
 
                     //RENDER LEFT
                     int left;
-                    if (x == 0) { left = 0; } else { left = this[x - 1, y, z]; }
+                    if (x == 0) { if (voxelType == 9) { left = world[x - 1, y, z]; } else { left = 0; } } else { left = this[x - 1, y, z]; }
 
                     if (_transparentBlockIDs.Contains(left))
                     {
-                        if (voxelType == 44)
+                        if (voxelType != 9 || (voxelType == 9 && left != 9))
                         {
-                            foreach (var vert in _leftHalfVertices)
-                                vertices.Add(pos + vert);
+                            if (voxelType == 44)
+                            {
+                                foreach (var vert in _leftHalfVertices)
+                                    vertices.Add(pos + vert);
+                            }
+                            else
+                            {
+                                foreach (var vert in _leftVertices)
+                                    vertices.Add(pos + vert);
+                            }
+
+
+                            uvList.Add(new Vector2(0, 0));
+                            uvList.Add(new Vector2(0, 1));
+                            uvList.Add(new Vector2(1, 1));
+                            uvList.Add(new Vector2(1, 0));
+                            AddTriangles(voxelType, verticesPos, _leftTriangles);
+
+                            foreach (var normal in _faceNormals)
+                                normals.Add(normal);
                         }
-                        else
-                        {
-                            foreach (var vert in _leftVertices)
-                                vertices.Add(pos + vert);
-                        }
-
-
-                        uvList.Add(new Vector2(0, 0));
-                        uvList.Add(new Vector2(0, 1));
-                        uvList.Add(new Vector2(1, 1));
-                        uvList.Add(new Vector2(1, 0));
-                        AddTriangles(voxelType, verticesPos, _leftTriangles);
-
-                        foreach (var normal in _faceNormals)
-                            normals.Add(normal);
+                         
 
                     }
 
@@ -404,32 +419,35 @@ public class Chunk : MonoBehaviour
 
                     //RENDER BACK
                     int back;
-                    if (z == 15) { back = 0; } else { back = this[x, y, z + 1]; }
+                    if (z == 15) { if (voxelType == 9) { back = world[x, y, z + 1]; } else { back = 0; } } else { back = this[x, y, z + 1]; }
 
                     if (_transparentBlockIDs.Contains(back))
                     {
-                        if (voxelType == 44)
+                        if (voxelType != 9 || (voxelType == 9 && back != 9))
                         {
-                            foreach (var vert in _backHalfVertices)
-                                vertices.Add(pos + vert);
+                            if (voxelType == 44)
+                            {
+                                foreach (var vert in _backHalfVertices)
+                                    vertices.Add(pos + vert);
+                            }
+                            else
+                            {
+                                foreach (var vert in _backVertices)
+                                    vertices.Add(pos + vert);
+                            }
+
+
+                            uvList.Add(new Vector2(1, 1));
+                            uvList.Add(new Vector2(0, 1));
+
+                            uvList.Add(new Vector2(0, 0));
+                            uvList.Add(new Vector2(1, 0));
+
+                            AddTriangles(voxelType, verticesPos, _backTriangles);
+
+                            foreach (var normal in _faceNormals)
+                                normals.Add(normal);
                         }
-                        else
-                        {
-                            foreach (var vert in _backVertices)
-                                vertices.Add(pos + vert);
-                        }
-
-
-                        uvList.Add(new Vector2(1, 1));
-                        uvList.Add(new Vector2(0, 1));
-
-                        uvList.Add(new Vector2(0, 0));
-                        uvList.Add(new Vector2(1, 0));
-
-                        AddTriangles(voxelType, verticesPos, _backTriangles);
-
-                        foreach (var normal in _faceNormals)
-                            normals.Add(normal);
 
                     }
 
@@ -437,21 +455,25 @@ public class Chunk : MonoBehaviour
 
                     //RENDER BOTTOM
                     int bottom;
-                    if (y == 0) { bottom = 0; } else { bottom = this[x, y - 1, z]; }
+                    if (y == 0) { if (voxelType == 9) { bottom = world[x, y - 1, z]; } else { bottom = 0; } } else { bottom = this[x, y - 1, z]; }
 
                     if (_transparentBlockIDs.Contains(bottom))
                     {
-                        foreach (var vert in _bottomVertices)
-                            vertices.Add(pos + vert);
+                        if (voxelType != 9 || (voxelType == 9 && bottom != 9))
+                        {
+                            foreach (var vert in _bottomVertices)
+                                vertices.Add(pos + vert);
 
-                        uvList.Add(new Vector2(0, 0));
-                        uvList.Add(new Vector2(0, 1));
-                        uvList.Add(new Vector2(1, 1));
-                        uvList.Add(new Vector2(1, 0));
-                        AddTriangles(voxelType, verticesPos, _bottomTriangles);
+                            uvList.Add(new Vector2(0, 0));
+                            uvList.Add(new Vector2(0, 1));
+                            uvList.Add(new Vector2(1, 1));
+                            uvList.Add(new Vector2(1, 0));
+                            AddTriangles(voxelType, verticesPos, _bottomTriangles);
 
-                        foreach (var normal in _faceNormals)
-                            normals.Add(normal);
+                            foreach (var normal in _faceNormals)
+                                normals.Add(normal);
+                        }
+                         
 
                     }
 

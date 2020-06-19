@@ -6,6 +6,7 @@ TagManager:
   tags:
   - Network
   - Ground
+  - WaterCanvas
   layers:
   - Default
   - TransparentFX
