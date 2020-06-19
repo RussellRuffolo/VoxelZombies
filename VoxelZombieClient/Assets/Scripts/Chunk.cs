@@ -311,7 +311,11 @@ public class Chunk : MonoBehaviour
 
                     //RENDER TOP
                     int top;
-                    if (y == 15) { if (voxelType == 9) { top = world[Mathf.FloorToInt(transform.position.x) + x, Mathf.FloorToInt(transform.position.y) + y + 1, Mathf.FloorToInt(transform.position.z) + z]; Debug.Log("Above water the voxeltype was: " + top); } else { top = 0; } } else { top = this[x, y + 1, z]; }
+                    if (y == 15) {
+                        if (voxelType == 9)
+                        {
+                            top = world[Mathf.FloorToInt(transform.position.x) + x, Mathf.FloorToInt(transform.position.y) + y + 1, Mathf.FloorToInt(transform.position.z) + z]; }
+                        else { top = 0; } } else { top = this[x, y + 1, z]; }
                     if (top == 44)
                         top = 0;
                     if (_transparentBlockIDs.Contains(top))

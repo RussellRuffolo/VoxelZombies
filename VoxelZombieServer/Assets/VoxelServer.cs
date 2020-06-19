@@ -186,7 +186,7 @@ public class VoxelServer : MonoBehaviour
             NewPlayerWriter.Write(playerTransform.rotation.eulerAngles.y);
             NewPlayerWriter.Write(playerTransform.rotation.eulerAngles.z);
 
-
+            NewPlayerWriter.Write(playerTransform.GetComponent<ServerPositionTracker>().stateTag);
 
             using (Message NewPlayerMessage = Message.Create(ADD_PLAYER_TAG, NewPlayerWriter))
             {

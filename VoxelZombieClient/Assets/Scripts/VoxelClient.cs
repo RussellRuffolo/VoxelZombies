@@ -32,6 +32,8 @@ public class VoxelClient : MonoBehaviour
     Dictionary<ushort, Transform> NetworkPlayerDictionary = new Dictionary<ushort, Transform>();
     Transform localPlayerTransform;
 
+   // public Canvas ZombieCanvas;
+
     private void Awake()
     {
 
@@ -212,10 +214,24 @@ public class VoxelClient : MonoBehaviour
 
                 Vector3 eulerRotation = new Vector3(reader.ReadSingle(),
                                         reader.ReadSingle(), reader.ReadSingle());
+
+                ushort stateTag = reader.ReadUInt16();
               
                 GameObject NetworkPlayer = GameObject.Instantiate(NetworkPlayerPrefab,
                                 position, Quaternion.Euler(eulerRotation.x, eulerRotation.y, eulerRotation.z));
 
+                Color newColor;
+
+                if(stateTag == 0)
+                {
+                    newColor = Color.white;
+                }
+                else
+                {
+                    newColor = Color.red;
+                }
+
+                NetworkPlayer.GetComponent<MeshRenderer>().material.color = newColor;
                 NetworkPlayerDictionary.Add(PlayerID, NetworkPlayer.transform);
                 
             }
@@ -352,6 +368,15 @@ public class VoxelClient : MonoBehaviour
             if (ID == Client.ID)
             {
                 localPlayerTransform.GetComponent<MeshRenderer>().material.color = newColor;
+
+                if(stateTag == 0)
+                {
+                   // ZombieCanvas.enabled = true;
+                }
+                else
+                {
+                   // ZombieCanvas.enabled = false;
+                }
             }
             else
             {
