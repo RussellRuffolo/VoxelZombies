@@ -17,19 +17,24 @@ public class VoxelServer : MonoBehaviour
     const ushort REMOVE_PLAYER_TAG = 7;
     const ushort MAP_LOADED_TAG = 8;
     const ushort MAP_RELOADED_TAG = 9;
+    public const ushort LOGIN_ATTEMPT_TAG = 10;
+    public const ushort CHAT_TAG = 11;
 
     XmlUnityServer XMLServer;
     DarkRiftServer Server;
     VoxelEngine vEngine;
     ServerPlayerManager PlayerManager;
     ServerGameManager gManager;
+    ServerBlockEditor bEditor;
 
-    World world;
+    
 
     //players who have loaded the current map
     List<IClient> loadedPlayers = new List<IClient>();
 
-    List<BlockEdit> EditedBlocks = new List<BlockEdit>();
+    
+
+    public Dictionary<ushort, string> playerNames = new Dictionary<ushort, string>();
 
     private void Awake()
     {
@@ -37,8 +42,9 @@ public class VoxelServer : MonoBehaviour
         XMLServer = GetComponent<XmlUnityServer>();
         PlayerManager = GetComponent<ServerPlayerManager>();
         gManager = GetComponent<ServerGameManager>();
+        bEditor = GetComponent<ServerBlockEditor>();
 
-        world = vEngine.world;
+       
     }
 
     private void Start()
@@ -48,37 +54,15 @@ public class VoxelServer : MonoBehaviour
     }
 
     void PlayerConnected(object sender, ClientConnectedEventArgs e)
-    {
-        ushort stateTag;
-        if(gManager.inStartTime)
-        {
-            stateTag = 0;
-        }
-        else
-        {
-            stateTag = 1;
-        }
-        PlayerManager.AddPlayer(e.Client.ID, stateTag, vEngine.currentMap.SpawnX, vEngine.currentMap.SpawnY, vEngine.currentMap.SpawnZ);
-            
-        /*
-        
-        */
+    {        
         using (DarkRiftWriter mapWriter = DarkRiftWriter.Create())
         {
-
             mapWriter.Write(vEngine.currentMap.Name);
-            /*
-            mapWriter.Write(vEngine.currentMap.Width);
-            mapWriter.Write(vEngine.currentMap.Length);
-            mapWriter.Write(vEngine.currentMap.Height);
-            mapWriter.Write(vEngine.mapBytes);
-            Debug.Log(vEngine.mapBytes.Length);
-            */
+
             using (Message mapMessage = Message.Create(MAP_TAG, mapWriter))
             {
-                e.Client.SendMessage(mapMessage, SendMode.Reliable);
-                //Debug.Log("Sent Map Message");
-            }
+                e.Client.SendMessage(mapMessage, SendMode.Reliable);              
+           }
         }
 
         e.Client.MessageReceived += ClientMessageReceived;
@@ -86,26 +70,29 @@ public class VoxelServer : MonoBehaviour
       
     }
 
-
-
     void PlayerDisconnected(object sender, ClientDisconnectedEventArgs e)
     {
-        ushort playerID = e.Client.ID;
-        PlayerManager.RemovePlayer(playerID);
-        loadedPlayers.Remove(e.Client);
-        using (DarkRiftWriter RemovePlayerWriter = DarkRiftWriter.Create())
-        {        
-            RemovePlayerWriter.Write(playerID);
-
-            using (Message RemovePlayerMessage = Message.Create(REMOVE_PLAYER_TAG, RemovePlayerWriter))
+        if(PlayerManager.PlayerDictionary.ContainsKey(e.Client.ID))
+        {
+            ushort playerID = e.Client.ID;
+            PlayerManager.RemovePlayer(playerID);
+            loadedPlayers.Remove(e.Client);
+            playerNames.Remove(playerID);
+            using (DarkRiftWriter RemovePlayerWriter = DarkRiftWriter.Create())
             {
-                foreach (IClient c in XMLServer.Server.ClientManager.GetAllClients())
+                RemovePlayerWriter.Write(playerID);
+
+                using (Message RemovePlayerMessage = Message.Create(REMOVE_PLAYER_TAG, RemovePlayerWriter))
                 {
-                    c.SendMessage(RemovePlayerMessage, SendMode.Reliable);
-                    //Debug.Log("Sent Player Remove Message");
+                    foreach (IClient c in XMLServer.Server.ClientManager.GetAllClients())
+                    {
+                        c.SendMessage(RemovePlayerMessage, SendMode.Reliable);
+                        //Debug.Log("Sent Player Remove Message");
+                    }
                 }
             }
         }
+       
     }
 
     void ClientMessageReceived(object sender, MessageReceivedEventArgs e)
@@ -122,20 +109,105 @@ public class VoxelServer : MonoBehaviour
            }
            else if(e.Tag == MAP_LOADED_TAG)
             {
-                InitializePlayer(e);
+              //  InitializePlayer(e);
             }
            else if(e.Tag == MAP_RELOADED_TAG)
             {
                 ReInitializePlayer(e);
             }
+           else if(e.Tag == LOGIN_ATTEMPT_TAG)
+            {
+                HandleLogin(e);
+            }
+           else if(e.Tag == CHAT_TAG)
+            {
+                HandlePlayerChat(e);
+            }
         }
 
     }
-    
-    private void InitializePlayer(MessageReceivedEventArgs e)
+
+    private void HandlePlayerChat(MessageReceivedEventArgs e)
     {
-        
+        using (DarkRiftReader reader = e.GetMessage().GetReader())
+        {
+            string chatMessage = reader.ReadString();
+            ushort colorTag = reader.ReadUInt16();
+
+            string namedChatMessage = playerNames[e.Client.ID] + ": " + chatMessage;
+
+            SendChat(namedChatMessage, colorTag);
+        }
+    }
+
+    public void SendChat(string chatMessage, ushort colorTag)
+    {
+        using (DarkRiftWriter chatWriter = DarkRiftWriter.Create())
+        {
+
+            chatWriter.Write(chatMessage);
+            chatWriter.Write(colorTag);
+
+            using (Message newChatMessage = Message.Create(CHAT_TAG, chatWriter))
+            {
+                foreach (IClient c in loadedPlayers)
+                {
+                    c.SendMessage(newChatMessage, SendMode.Reliable);
+                }
+            }
+        }
+    }
+    
+    private void HandleLogin(MessageReceivedEventArgs e)
+    {
+        using (DarkRiftReader reader = e.GetMessage().GetReader())
+        {
+            bool succesfulLogin;
+
+            string newPlayerName = reader.ReadString();
+
+            if(playerNames.ContainsValue(newPlayerName))
+            {
+                succesfulLogin = false;
+            }
+            else
+            {
+                playerNames.Add(e.Client.ID, newPlayerName);
+                succesfulLogin = true;
+
+                InitializePlayer(e);
+            }
+            
+            using (DarkRiftWriter loginWriter = DarkRiftWriter.Create())
+            {
+                loginWriter.Write(succesfulLogin);
+                using (Message loginMessage = Message.Create(LOGIN_ATTEMPT_TAG, loginWriter))
+                {
+                    e.Client.SendMessage(loginMessage, SendMode.Reliable);
+                }
+
+            }
+
+            
+
+        }
+    }
+
+    private void InitializePlayer(MessageReceivedEventArgs e)
+    {   
+       
         loadedPlayers.Add(e.Client);
+
+        ushort stateTag;
+        if (gManager.inStartTime)
+        {
+            stateTag = 0;
+        }
+        else
+        {
+            stateTag = 1;
+        }
+        PlayerManager.AddPlayer(e.Client.ID, stateTag, vEngine.currentMap.SpawnX, vEngine.currentMap.SpawnY, vEngine.currentMap.SpawnZ);
 
         using (DarkRiftWriter PlayerWriter = DarkRiftWriter.Create())
         {
@@ -164,7 +236,7 @@ public class VoxelServer : MonoBehaviour
             using (Message playerMessage = Message.Create(PLAYER_INIT_TAG, PlayerWriter))
             {
                 e.Client.SendMessage(playerMessage, SendMode.Reliable);
-                //Debug.Log("Sent Player Init Message");
+              
             }
 
         }
@@ -195,7 +267,7 @@ public class VoxelServer : MonoBehaviour
                     if (c.ID != e.Client.ID)
                     {
                         c.SendMessage(NewPlayerMessage, SendMode.Reliable);
-                       // Debug.Log("Sent Player Add Message");
+                     
                     }
                 }
             }
@@ -204,8 +276,7 @@ public class VoxelServer : MonoBehaviour
 
         using (DarkRiftWriter BlockEditsWriter = DarkRiftWriter.Create())
         {
-
-            foreach(BlockEdit bEdit in EditedBlocks)
+            foreach(BlockEdit bEdit in bEditor.EditedBlocks)
             {
                 BlockEditsWriter.Write(bEdit.x);
                 BlockEditsWriter.Write(bEdit.y);
@@ -257,34 +328,19 @@ public class VoxelServer : MonoBehaviour
 
     void ApplyBlockEdit(MessageReceivedEventArgs e)
     {
+    
         using (DarkRiftReader reader = e.GetMessage().GetReader())
         {
+            //world position of the block to be edited
             ushort x = reader.ReadUInt16();
             ushort y = reader.ReadUInt16();
             ushort z = reader.ReadUInt16();
 
+            //the new blockTag the client requested
             ushort blockTag = reader.ReadUInt16();
 
-            if(world[x, y, z] != blockTag)
+            if(bEditor.TryApplyEdit(x, y, z, blockTag))
             {
-                //check to see if block intersects players
-                Collider[] thingsHit = Physics.OverlapBox(new Vector3(x + .5f, y + .5f, z + .5f), new Vector3(.45f, .45f, .45f));
-
-                foreach(Collider col in thingsHit)
-                {
-                    if(col.CompareTag("Player"))
-                    {
-                        Debug.Log("Hit player");
-                        return;
-                    }
-                }
-
-                world[x, y, z] = blockTag;
-
-                EditedBlocks.Add(new BlockEdit(x, y, z, blockTag));
-
-                vEngine.mapBytes[z + x * vEngine.currentMap.Length + y * vEngine.currentMap.Length * vEngine.currentMap.Width] = (byte)blockTag;
-
                 using (DarkRiftWriter blockWriter = DarkRiftWriter.Create())
                 {
 
@@ -297,14 +353,12 @@ public class VoxelServer : MonoBehaviour
                     {
                         foreach (IClient c in loadedPlayers)
                         {
-                              c.SendMessage(blockEditMessage, SendMode.Reliable);
+                            c.SendMessage(blockEditMessage, SendMode.Reliable);
                             //Debug.Log("Sent Block Edit Message");
                         }
                     }
 
                 }
-
-                world.Chunks[ChunkID.FromWorldPos(x, y, z)].dirty = true;
             }
 
         }
@@ -370,6 +424,8 @@ public class VoxelServer : MonoBehaviour
 
     public void StartRound()
     {
+        bEditor.EditedBlocks.Clear();
+
         foreach (IClient c in XMLServer.Server.ClientManager.GetAllClients())
         {
             UpdatePlayerState(c.ID, 0);
@@ -378,15 +434,7 @@ public class VoxelServer : MonoBehaviour
         Vector3 spawnPosition = new Vector3(vEngine.currentMap.SpawnX, vEngine.currentMap.SpawnY, vEngine.currentMap.SpawnZ);
 
         using (DarkRiftWriter mapWriter = DarkRiftWriter.Create())
-        {
-            /*
-            mapWriter.Write(vEngine.currentMap.Width);
-            mapWriter.Write(vEngine.currentMap.Length);
-            mapWriter.Write(vEngine.currentMap.Height);
-            mapWriter.Write(vEngine.mapBytes);
-            Debug.Log(vEngine.currentMap.Name);
-            */
-
+        {      
             mapWriter.Write(vEngine.currentMap.Name);
 
             using (Message mapMessage = Message.Create(MAP_TAG, mapWriter))
@@ -407,11 +455,11 @@ public class VoxelServer : MonoBehaviour
 
     public ushort GetRandomPlayer()
     {
-        int numClients = XMLServer.Server.ClientManager.GetAllClients().Length;
+        int numClients = loadedPlayers.Count;
         int playerIndex = Random.Range(0, numClients);
         if(numClients != 0)
         {
-            return XMLServer.Server.ClientManager.GetAllClients()[playerIndex].ID;
+            return loadedPlayers[playerIndex].ID;
         }
         else
         {
@@ -422,22 +470,6 @@ public class VoxelServer : MonoBehaviour
     }
 }
 
-class BlockEdit
-{
-    public ushort x;
-    public ushort y;
-    public ushort z;
 
-    public ushort blockTag;
-
-    public BlockEdit(ushort editX, ushort editY, ushort editZ, ushort newTag)
-    {
-        x = editX;
-        y = editY;
-        z = editZ;
-
-        blockTag = newTag;
-    }
-}
     
 

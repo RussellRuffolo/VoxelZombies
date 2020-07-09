@@ -45,6 +45,7 @@ public class ServerPositionTracker : MonoBehaviour
                 {
                     Debug.Log("Infection!");
                     vServer.UpdatePlayerState(otherTracker.ID, 1);
+                    vServer.SendChat(vServer.playerNames[otherTracker.ID] + " was infected by " + vServer.playerNames[ID] + "!", 2);
                 }
 
             }

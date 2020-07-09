@@ -41,6 +41,8 @@ public class HalfBlockDetector : MonoBehaviour
             //Steps
             if (stepUp)
             {
+                stepUpOffset += Vector3.up * .1f;
+                Debug.Log("Step up:" + stepUpOffset);
                 steppingUp = true;
                 halfStepOffset = .5f * stepUpOffset;
                 //this.GetComponent<Rigidbody>().position += stepUpOffset;
@@ -49,8 +51,7 @@ public class HalfBlockDetector : MonoBehaviour
             }
 
             
-        }
-        
+        }        
         else
         {
             grounded = false;
@@ -66,9 +67,9 @@ public class HalfBlockDetector : MonoBehaviour
 
     }
 
-    void OnCollisionEnter(Collision col)
+    private void OnCollisionEnter(Collision collision)
     {
-        allCPs.AddRange(col.contacts);
+        allCPs.AddRange(collision.contacts);
     }
 
     void OnCollisionStay(Collision col)
@@ -87,7 +88,7 @@ public class HalfBlockDetector : MonoBehaviour
         foreach (ContactPoint cp in allCPs)
         {
             //Pointing with some up direction
-            if (cp.normal.y > 0.0001f && (found == false || cp.normal.y > groundCP.normal.y))
+            if (cp.normal.y == 1 && (found == false || cp.normal.y > groundCP.normal.y))
             {
                 groundCP = cp;
                 found = true;

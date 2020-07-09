@@ -2,17 +2,25 @@
 using System.Collections.Generic;
 using fNbt;
 using UnityEngine;
+using UnityEngine.SceneManagement;
 
 public class ClientVoxelEngine : MonoBehaviour
 {
     public World world = new World();
     public List<Material> materialList;
 
+    public int Length, Width, Height;
+
     private void Awake()
     {
         foreach(Material mat in materialList)
         {
             mat.SetFloat("_Glossiness", 0);
+        }
+
+        if(SceneManager.GetActiveScene().name == "LoginScene")
+        {
+            LoadMap("zombiecity");
         }
     }
 
@@ -33,9 +41,9 @@ public class ClientVoxelEngine : MonoBehaviour
         short width = mapCompoundTag["Width"].ShortValue;
         short height = mapCompoundTag["Height"].ShortValue;
 
-        int Length = length;
-        int Width = width;
-        int Height = height;        
+         Length = length;
+         Width = width;
+         Height = height;        
 
         byte[] mapBytes = mapCompoundTag["Blocks"].ByteArrayValue;
         byte[] dataBytes = mapCompoundTag["Data"].ByteArrayValue;
@@ -56,7 +64,9 @@ public class ClientVoxelEngine : MonoBehaviour
                     var chunk = newChunkObj.AddComponent<Chunk>();
                     chunk.world = world;
                     chunk.GetComponent<MeshRenderer>().materials = materialList.ToArray();
-                    world.Chunks.Add(new ChunkID(x, y, z), chunk);
+                    ChunkID newID = new ChunkID(x, y, z);
+                    world.Chunks.Add(newID, chunk);
+                    chunk.ID = newID;
                 }
             }
         }

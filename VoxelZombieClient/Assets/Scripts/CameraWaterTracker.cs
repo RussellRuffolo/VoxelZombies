@@ -1,18 +1,20 @@
 ﻿using System.Collections;
 using System.Collections.Generic;
 using UnityEngine;
+using UnityEngine.UI;
 
 public class CameraWaterTracker : MonoBehaviour
 {
     private World world;
 
-    private Canvas waterEffect;
+    private GameObject waterEffect;
     // Start is called before the first frame update
     void Start()
     {
         world = GameObject.FindGameObjectWithTag("Network").GetComponent<ClientVoxelEngine>().world;
-        waterEffect = GameObject.FindGameObjectWithTag("WaterCanvas").GetComponent<Canvas>();
-        waterEffect.enabled = false;
+        waterEffect = Instantiate(Resources.Load<GameObject>("WaterCanvas"));
+       // waterEffect = GameObject.FindGameObjectWithTag("WaterCanvas").GetComponent<Canvas>();
+       // waterEffect.GetComponentInChildren<Image>().enabled = false;
 
     }
 
@@ -25,11 +27,11 @@ public class CameraWaterTracker : MonoBehaviour
 
         if(world[x, y, z] == 9)
         {
-            waterEffect.enabled = true;
+            waterEffect.GetComponentInChildren<Image>().enabled = true;
         }
         else
         {
-            waterEffect.enabled = false;
+            waterEffect.GetComponentInChildren<Image>().enabled = false;
 
         }
     }

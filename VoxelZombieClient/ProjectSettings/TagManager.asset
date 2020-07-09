@@ -7,6 +7,8 @@ TagManager:
   - Network
   - Ground
   - WaterCanvas
+  - Water
+  - ChatCanvas
   layers:
   - Default
   - TransparentFX

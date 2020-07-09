@@ -15,6 +15,11 @@ public class Chunk : MonoBehaviour
     private MeshFilter meshFilter;
     private MeshCollider meshCollider;
 
+    private MeshFilter waterMeshFilter;
+    private MeshCollider waterMeshCollider;
+
+    public ChunkID ID;
+
     List<int>[] TriangleLists = new List<int>[55];
     //0-48 are default MC ids offset back by 1 because 0 was air
     //49 is grass top
@@ -114,7 +119,7 @@ public class Chunk : MonoBehaviour
     };
 
     private Vector3[] _leftHalfVertices = new[]
-{
+    {
       new Vector3 (0, 0, 0),
       new Vector3 (0, .5f, 0),
       new Vector3 (0, .5f, 1),
@@ -231,6 +236,20 @@ public class Chunk : MonoBehaviour
         physMat.staticFriction = 0;
         meshCollider.material = physMat;
 
+        GameObject waterChunk = new GameObject();
+        waterChunk.transform.position = transform.position;
+        waterChunk.transform.parent = transform;
+        waterChunk.tag = "Water";
+        waterChunk.layer = 4; //water
+
+        MeshRenderer waterRenderer = waterChunk.AddComponent<MeshRenderer>();
+        waterRenderer.material = GetComponent<MeshRenderer>().materials[8];
+
+        waterMeshFilter = waterChunk.AddComponent<MeshFilter>();
+        waterMeshCollider = waterChunk.AddComponent<MeshCollider>();
+
+       
+
     }
 
     private void Update()
@@ -242,15 +261,20 @@ public class Chunk : MonoBehaviour
     public void RenderToMesh()
     {
         var vertices = new List<Vector3>();
-
+        var waterVertices = new List<Vector3>();
         foreach (List<int> triangleList in TriangleLists)
         {
             triangleList.Clear();
         }
 
+        List<int> waterTriangles = new List<int>();
+
         var normals = new List<Vector3>();
+        var waterNormals = new List<Vector3>();
+
 
         uvList.Clear();
+        var waterUVs = new List<Vector3>();
 
         for (var x = 0; x < 16; x++)
         {
@@ -260,6 +284,7 @@ public class Chunk : MonoBehaviour
                 {
                     var pos = new Vector3(x, y, z);
                     var verticesPos = vertices.Count;
+                    var waterVertPos = waterVertices.Count;
                     var voxelType = this[x, y, z];
                     // If it is air we ignore this block
                     if (voxelType == 0)
@@ -271,187 +296,411 @@ public class Chunk : MonoBehaviour
                        // GameObject newWater = Instantiate(waterPrefab);
                        // newWater.transform.parent = transform;
                        // newWater.transform.localPosition = new Vector3(x + .5f, y + .5f, z + .5f);
-                        continue;
+                     // continue;
                     }
-                    
+
+                    if (normals.Count != vertices.Count)
+                    {
+                        Debug.Log("Normals: " + normals.Count + " Vertices: " + vertices.Count);
+                    }
 
                     //RENDER FRONT
                     int front;
-                    if (z == 0) { front = 0; } else { front = this[x, y, z - 1]; }
-                    if (_transparentBlockIDs.Contains(front) && front != voxelType)
-                    {
-                        if (voxelType == 44)
+                    if (z == 0) {
+                        ChunkID frontID = new ChunkID(ID.X, ID.Y, ID.Z - 1);
+                        if (world.Chunks.ContainsKey(frontID))
                         {
-                            foreach (var vert in _frontHalfVertices)
-                                vertices.Add(pos + vert);
+                            front = world[ID.X * 16 + x, ID.Y * 16 +y, ID.Z * 16 + z - 1];
                         }
                         else
                         {
-                            foreach (var vert in _frontVertices)
-                                vertices.Add(pos + vert);
+                            front = 0;
+                        }
+                    }
+                    else { front = this[x, y, z - 1]; }
+                    if (_transparentBlockIDs.Contains(front) && front != voxelType)
+                    {
+                        if(voxelType == 9)
+                        {
+                            foreach(var vert in _frontVertices)
+                                waterVertices.Add(pos + vert);
+                         
+                            waterUVs.Add(new Vector2(0, 0));
+                            waterUVs.Add(new Vector2(1, 0));
+
+                            waterUVs.Add(new Vector2(1, 1));
+                            waterUVs.Add(new Vector2(0, 1));
+
+                            foreach (var normal in _faceNormals)
+                                waterNormals.Add(normal);
+
+                            foreach(var tri in _frontTriangles)
+                            {
+                                waterTriangles.Add(waterVertPos + tri);
+                            }
+
+                        }
+                        else
+                        {
+                            if (voxelType == 44)
+                            {
+                                foreach (var vert in _frontHalfVertices)
+                                    vertices.Add(pos + vert);
+                            }
+                            else
+                            {
+                                foreach (var vert in _frontVertices)
+                                    vertices.Add(pos + vert);
+                            }
+
+                           
+                            uvList.Add(new Vector2(0, 0));
+                            uvList.Add(new Vector2(1, 0));
+
+                            uvList.Add(new Vector2(1, 1));
+                            uvList.Add(new Vector2(0, 1));
+
+                            foreach (var normal in _faceNormals)
+                                normals.Add(normal);
+
+                            AddTriangles(voxelType, verticesPos, _frontTriangles);
                         }
 
-                        AddTriangles(voxelType, verticesPos, _frontTriangles);
-                        uvList.Add(new Vector2(0, 0));
-                        uvList.Add(new Vector2(1, 0));
+                      
 
-                        uvList.Add(new Vector2(1, 1));
-                        uvList.Add(new Vector2(0, 1));
-
-                        foreach (var normal in _faceNormals)
-                            normals.Add(normal);
                     }
 
                     verticesPos = vertices.Count;
+                    waterVertPos = waterVertices.Count;
+
+                    if (normals.Count != vertices.Count)
+                    {
+                        Debug.Log("Normals: " + normals.Count + " Vertices: " + vertices.Count);
+                    }
 
                     //RENDER TOP
                     int top;
-                    if (y == 15) { top = 0; } else { top = this[x, y + 1, z]; }
+                    if (y == 15) {
+                        ChunkID topID = new ChunkID(ID.X, ID.Y + 1, ID.Z );
+                        if (world.Chunks.ContainsKey(topID))
+                        {
+                            top = world[ID.X * 16 + x, ID.Y * 16 + y  + 1, ID.Z * 16 + z];
+                        }
+                        else
+                        {
+                            top = 0;
+                        }
+                    }
+                    else { top = this[x, y + 1, z]; }
                     if (top == 44)
                         top = 0;
                     if (_transparentBlockIDs.Contains(top) && top != voxelType)
                     {
-                        if (voxelType == 44)
+                        if (voxelType == 9)
                         {
-                            foreach (var vert in _topHalfVertices)
-                                vertices.Add(pos + vert);
+                            foreach (var vert in _topVertices)
+                                waterVertices.Add(pos + vert);
+
+
+                            waterUVs.Add(new Vector2(0, 0));
+                            waterUVs.Add(new Vector2(0, 1));
+                            waterUVs.Add(new Vector2(1, 1));
+                            waterUVs.Add(new Vector2(1, 0));
+
+                            foreach (var normal in _faceNormals)
+                                waterNormals.Add(normal);
+
+                            foreach (var tri in _topTriangles)
+                            {
+                                waterTriangles.Add(waterVertPos + tri);
+                            }
                         }
                         else
                         {
-                            foreach (var vert in _topVertices)
-                                vertices.Add(pos + vert);
-                        }
+                            if (voxelType == 44)
+                            {
+                                foreach (var vert in _topHalfVertices)
+                                    vertices.Add(pos + vert);
+                            }
+                            else
+                            {
+                                foreach (var vert in _topVertices)
+                                    vertices.Add(pos + vert);
+                            }
 
+                            uvList.Add(new Vector2(0, 0));
+                            uvList.Add(new Vector2(0, 1));
+                            uvList.Add(new Vector2(1, 1));
+                            uvList.Add(new Vector2(1, 0));
 
-                        uvList.Add(new Vector2(0, 0));
-                        uvList.Add(new Vector2(0, 1));
-                        uvList.Add(new Vector2(1, 1));
-                        uvList.Add(new Vector2(1, 0));
+                            foreach (var normal in _faceNormals)
+                                normals.Add(normal);
 
-                        AddTriangles(voxelType, verticesPos, _topTriangles);
+                            AddTriangles(voxelType, verticesPos, _topTriangles);
+                        }                     
 
-                        foreach (var normal in _faceNormals)
-                            normals.Add(normal);
-
+                        
                     }
 
                     verticesPos = vertices.Count;
+                    waterVertPos = waterVertices.Count;
+
 
                     //RENDER RIGHT
                     int right;
-                    if (x == 15) { right = 0; } else { right = this[x + 1, y, z]; }
+                    if (x == 15) {
+                        ChunkID rightID = new ChunkID(ID.X + 1, ID.Y, ID.Z);
+                        if (world.Chunks.ContainsKey(rightID))
+                        {
+                            right = world[ID.X * 16 + x + 1, ID.Y * 16 + y, ID.Z * 16 + z];
+                        }
+                        else
+                        {
+                            right = 0;
+                        }
+                    }
+                    else { right = this[x + 1, y, z]; }
 
                     if (_transparentBlockIDs.Contains(right) && right != voxelType)
                     {
-                        if (voxelType == 44)
+
+                        if (voxelType == 9)
                         {
-                            foreach (var vert in _rightHalfVertices)
-                                vertices.Add(pos + vert);
+                            foreach (var vert in _rightVertices)
+                                waterVertices.Add(pos + vert);
+
+                            waterUVs.Add(new Vector2(0, 0));
+                            waterUVs.Add(new Vector2(0, 1));
+                            waterUVs.Add(new Vector2(1, 1));
+                            waterUVs.Add(new Vector2(1, 0));
+
+                            foreach (var normal in _faceNormals)
+                                waterNormals.Add(normal);
+
+                            foreach (var tri in _rightTriangles)
+                            {
+                                waterTriangles.Add(waterVertPos + tri);
+                            }
                         }
                         else
                         {
-                            foreach (var vert in _rightVertices)
-                                vertices.Add(pos + vert);
+                            if (voxelType == 44)
+                            {
+                                foreach (var vert in _rightHalfVertices)
+                                    vertices.Add(pos + vert);
+                            }
+                            else
+                            {
+                                foreach (var vert in _rightVertices)
+                                    vertices.Add(pos + vert);
+                            }
+
+                            uvList.Add(new Vector2(0, 0));
+                            uvList.Add(new Vector2(0, 1));
+                            uvList.Add(new Vector2(1, 1));
+                            uvList.Add(new Vector2(1, 0));
+                            AddTriangles(voxelType, verticesPos, _rightTriangles);
+
+                            foreach (var normal in _faceNormals)
+                                normals.Add(normal);
+
                         }
-
-
-
-
-                        uvList.Add(new Vector2(0, 0));
-                        uvList.Add(new Vector2(0, 1));
-                        uvList.Add(new Vector2(1, 1));
-                        uvList.Add(new Vector2(1, 0));
-                        AddTriangles(voxelType, verticesPos, _rightTriangles);
-
-
-                        foreach (var normal in _faceNormals)
-                            normals.Add(normal);
+                        
+                     
 
                     }
 
                     verticesPos = vertices.Count;
+                    waterVertPos = waterVertices.Count;
+
 
                     //RENDER LEFT
                     int left;
-                    if (x == 0) { left = 0; } else { left = this[x - 1, y, z]; }
+                    if (x == 0) {
+                        ChunkID leftID = new ChunkID(ID.X - 1, ID.Y, ID.Z);
+                        if (world.Chunks.ContainsKey(leftID))
+                        {
+                            left = world[ID.X * 16 + x - 1, ID.Y * 16 + y, ID.Z * 16 + z];
+                        }
+                        else
+                        {
+                            left = 0;
+                        }
+                    }
+                    else { left = this[x - 1, y, z]; }
 
                     if (_transparentBlockIDs.Contains(left) && left != voxelType)
                     {
-                        if (voxelType == 44)
+                        if (voxelType == 9)
                         {
-                            foreach (var vert in _leftHalfVertices)
-                                vertices.Add(pos + vert);
+                            foreach (var vert in _leftVertices)
+                                waterVertices.Add(pos + vert);
+
+                            waterUVs.Add(new Vector2(0, 0));
+                            waterUVs.Add(new Vector2(0, 1));
+                            waterUVs.Add(new Vector2(1, 1));
+                            waterUVs.Add(new Vector2(1, 0));
+
+                            foreach (var normal in _faceNormals)
+                                waterNormals.Add(normal);
+
+                            foreach (var tri in _leftTriangles)
+                            {
+                                waterTriangles.Add(waterVertPos + tri);
+                            }
                         }
                         else
                         {
-                            foreach (var vert in _leftVertices)
-                                vertices.Add(pos + vert);
+                            if (voxelType == 44)
+                            {
+                                foreach (var vert in _leftHalfVertices)
+                                    vertices.Add(pos + vert);
+                            }
+                            else
+                            {
+                                foreach (var vert in _leftVertices)
+                                    vertices.Add(pos + vert);
+                            }
+
+
+                            uvList.Add(new Vector2(0, 0));
+                            uvList.Add(new Vector2(0, 1));
+                            uvList.Add(new Vector2(1, 1));
+                            uvList.Add(new Vector2(1, 0));
+                            AddTriangles(voxelType, verticesPos, _leftTriangles);
+
+                            foreach (var normal in _faceNormals)
+                                normals.Add(normal);
+
                         }
-
-
-                        uvList.Add(new Vector2(0, 0));
-                        uvList.Add(new Vector2(0, 1));
-                        uvList.Add(new Vector2(1, 1));
-                        uvList.Add(new Vector2(1, 0));
-                        AddTriangles(voxelType, verticesPos, _leftTriangles);
-
-                        foreach (var normal in _faceNormals)
-                            normals.Add(normal);
+                        
 
                     }
 
                     verticesPos = vertices.Count;
+                    waterVertPos = waterVertices.Count;
+
 
                     //RENDER BACK
                     int back;
-                    if (z == 15) { back = 0; } else { back = this[x, y, z + 1]; }
-
-                    if (_transparentBlockIDs.Contains(back) && back != voxelType)
-                    {
-                        if (voxelType == 44)
+                    if (z == 15) {
+                        ChunkID backID = new ChunkID(ID.X, ID.Y, ID.Z + 1);
+                        if (world.Chunks.ContainsKey(backID))
                         {
-                            foreach (var vert in _backHalfVertices)
-                                vertices.Add(pos + vert);
+                            back = world[ID.X * 16 + x, ID.Y * 16 + y, ID.Z * 16 + z + 1];
                         }
                         else
                         {
-                            foreach (var vert in _backVertices)
-                                vertices.Add(pos + vert);
+                            back = 0;
                         }
+                    }
+                    else { back = this[x, y, z + 1]; }
+
+                    if (_transparentBlockIDs.Contains(back) && back != voxelType)
+                    {
+                        if (voxelType == 9)
+                        {
+                            foreach (var vert in _backVertices)
+                                waterVertices.Add(pos + vert);
+
+                            waterUVs.Add(new Vector2(1, 0));
+                            waterUVs.Add(new Vector2(0, 1));
+                            waterUVs.Add(new Vector2(0, 0));
+                            waterUVs.Add(new Vector2(1, 0));
+
+                            foreach (var normal in _faceNormals)
+                                waterNormals.Add(normal);
+
+                            foreach (var tri in _backTriangles)
+                            {
+                                waterTriangles.Add(waterVertPos + tri);
+                            }
+                        }
+                        else
+                        {
+                            if (voxelType == 44)
+                            {
+                                foreach (var vert in _backHalfVertices)
+                                    vertices.Add(pos + vert);
+                            }
+                            else
+                            {
+                                foreach (var vert in _backVertices)
+                                    vertices.Add(pos + vert);
+                            }
 
 
-                        uvList.Add(new Vector2(1, 1));
-                        uvList.Add(new Vector2(0, 1));
+                            uvList.Add(new Vector2(1, 1));
+                            uvList.Add(new Vector2(0, 1));
 
-                        uvList.Add(new Vector2(0, 0));
-                        uvList.Add(new Vector2(1, 0));
+                            uvList.Add(new Vector2(0, 0));
+                            uvList.Add(new Vector2(1, 0));
 
-                        AddTriangles(voxelType, verticesPos, _backTriangles);
+                            AddTriangles(voxelType, verticesPos, _backTriangles);
 
-                        foreach (var normal in _faceNormals)
-                            normals.Add(normal);
+                            foreach (var normal in _faceNormals)
+                                normals.Add(normal);
+                        }
+                        
 
                     }
 
                     verticesPos = vertices.Count;
+                    waterVertPos = waterVertices.Count;
+
+           
 
                     //RENDER BOTTOM
                     int bottom;
-                    if (y == 0) { bottom = 0; } else { bottom = this[x, y - 1, z]; }
+                    if (y == 0) {
+                        ChunkID bottomID = new ChunkID(ID.X, ID.Y - 1, ID.Z);
+                        if (world.Chunks.ContainsKey(bottomID))
+                        {
+                            bottom = world[ID.X * 16 + x, ID.Y * 16 + y - 1, ID.Z * 16 + z];
+                        }
+                        else
+                        {
+                            bottom = 0;
+                        }
+                    }
+                    else { bottom = this[x, y - 1, z]; }
 
                     if (_transparentBlockIDs.Contains(bottom) && bottom != voxelType)
                     {
-                        foreach (var vert in _bottomVertices)
-                            vertices.Add(pos + vert);
+                        if (voxelType == 9)
+                        {
+                            foreach (var vert in _backVertices)
+                                waterVertices.Add(pos + vert);
 
-                        uvList.Add(new Vector2(0, 0));
-                        uvList.Add(new Vector2(0, 1));
-                        uvList.Add(new Vector2(1, 1));
-                        uvList.Add(new Vector2(1, 0));
-                        AddTriangles(voxelType, verticesPos, _bottomTriangles);
+                            waterUVs.Add(new Vector2(0, 0));
+                            waterUVs.Add(new Vector2(0, 1));
+                            waterUVs.Add(new Vector2(1, 1));
+                            waterUVs.Add(new Vector2(1, 0));
 
-                        foreach (var normal in _faceNormals)
-                            normals.Add(normal);
+                            foreach (var normal in _faceNormals)
+                                waterNormals.Add(normal);
+
+                            foreach (var tri in _backTriangles)
+                            {
+                                waterTriangles.Add(waterVertPos + tri);
+                            }
+                        }
+                        else
+                        {
+                            foreach (var vert in _bottomVertices)
+                                vertices.Add(pos + vert);
+
+                            uvList.Add(new Vector2(0, 0));
+                            uvList.Add(new Vector2(0, 1));
+                            uvList.Add(new Vector2(1, 1));
+                            uvList.Add(new Vector2(1, 0));
+                            AddTriangles(voxelType, verticesPos, _bottomTriangles);
+
+                            foreach (var normal in _faceNormals)
+                                normals.Add(normal);
+                        }
+
+                    
 
                     }
 
@@ -465,13 +714,30 @@ public class Chunk : MonoBehaviour
         mesh.SetVertices(vertices);
         for (int i = 0; i < 55; i++)
         {
-            mesh.SetTriangles(TriangleLists[i].ToArray(), i);
+            if(i != 8)
+            {
+                mesh.SetTriangles(TriangleLists[i].ToArray(), i);
+            }
+       
         }
         mesh.SetNormals(normals);
         mesh.SetUVs(0, uvList);
         meshFilter.mesh = mesh;
         meshCollider.sharedMesh = mesh;
+
+        var waterMesh = new Mesh();
+        waterMesh.subMeshCount = 1;
+        waterMesh.SetVertices(waterVertices);
+        waterMesh.SetTriangles(waterTriangles.ToArray(), 0);
+        waterMesh.SetNormals(waterNormals);
+        waterMeshFilter.mesh = waterMesh;
+        waterMeshCollider.sharedMesh = waterMesh;
         
+        if(normals.Count != vertices.Count)
+        {
+            Debug.Log("Normals: " + normals.Count + " Vertices: " + vertices.Count);        
+        }
+
         dirty = false;
     }
 

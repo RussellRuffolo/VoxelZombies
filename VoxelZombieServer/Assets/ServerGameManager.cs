@@ -9,8 +9,11 @@ public class ServerGameManager : MonoBehaviour
     ServerPlayerManager pMananger;
 
     public float RoundTime;
+    public float MinuteCounter;
 
     public bool inStartTime = false;
+
+    //TODO- MAP VOTING
 
     private void Awake()
     {
@@ -36,6 +39,7 @@ public class ServerGameManager : MonoBehaviour
         vEngine.LoadMap(vEngine.mapList[newMapIndex]);
         vServer.StartRound();
         RoundTime = 10 * 60;
+        MinuteCounter = RoundTime - 60;
         StartCoroutine(startDelay());
     }
 
@@ -57,9 +61,15 @@ public class ServerGameManager : MonoBehaviour
         if(RoundTime > 0)
         {
             RoundTime -= Time.deltaTime;
+            if(RoundTime < MinuteCounter)
+            {
+                vServer.SendChat("There are " + MinuteCounter / 60 + " minutes left in this round.", 2);
+                MinuteCounter -= 60;
+            }
         }
         else if(RoundTime <= 0)
         {
+            vServer.SendChat("Humans win!", 2);
             StartRound();
         }
     }
@@ -80,6 +90,8 @@ public class ServerGameManager : MonoBehaviour
             }
         }
 
+        vServer.SendChat("Zombies win!", 2);
+
         //if no players were human then zombies win
     }
 
@@ -92,6 +104,7 @@ public class ServerGameManager : MonoBehaviour
         if(firstZombie != 1000)
         {
             vServer.UpdatePlayerState(firstZombie, 1);
+            vServer.SendChat("The Infection begins with " + vServer.playerNames[firstZombie] + "!", 2);
         }
         
     }

@@ -107,7 +107,9 @@ public class VoxelEngine : MonoBehaviour
                     var chunk = newChunkObj.AddComponent<Chunk>();
                     chunk.world = world;
                     chunk.GetComponent<MeshRenderer>().materials = materialList.ToArray();
-                    world.Chunks.Add(new ChunkID(x, y, z), chunk);
+                    ChunkID newID = new ChunkID(x, y, z);
+                    world.Chunks.Add(newID, chunk);
+                    chunk.ID = newID;
                 }
             }
         }
@@ -178,11 +180,7 @@ public class VoxelEngine : MonoBehaviour
                         }
                         mapBytes[blockCount] = toAdd;
                     }
-                    else if(toAdd == 9) //9 is water
-                    {
-                        wEngine.AddWater(new VoxelCoordinate(x, y, z));
-                    }
-                   
+                  
                      world[x, y, z] = toAdd;
                      blockCount++;                           
                 }
