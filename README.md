@@ -13,15 +13,15 @@ Players spawn in a 3D voxel environment as humans. After 30 seconds a player is 
 *  Block breaking and placing
 *  Infection through human/zombie collision
 *  Loading maps from .schematic files
-
+* Water Physics
+* Chat System
+* Half Block Stairs
 
 # ToDo
-* Fix client map loading inconsistencies 
-* Add water/lava physics
-* Add half blocks
+* Add lava physics
 * Add decorative blocks
 * Replace placeholder textures
-* Chat System
+
 
 # Screenshots
 
