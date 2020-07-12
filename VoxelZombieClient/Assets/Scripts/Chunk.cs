@@ -217,7 +217,7 @@ public class Chunk : MonoBehaviour
 
     private List<int> _transparentBlockIDs = new List<int>
     {
-        0, 9, 18,
+        0, 9, 11, 18,
         20, 44
     };
 
@@ -240,15 +240,19 @@ public class Chunk : MonoBehaviour
         waterChunk.transform.position = transform.position;
         waterChunk.transform.parent = transform;
         waterChunk.tag = "Water";
+        waterChunk.layer = 4; //water
+
+        List<Material> LiquidMats = new List<Material>();
+        LiquidMats.Add(GetComponent<MeshRenderer>().materials[8]);
+        LiquidMats.Add(GetComponent<MeshRenderer>().materials[10]);
 
         MeshRenderer waterRenderer = waterChunk.AddComponent<MeshRenderer>();
-        waterRenderer.material = GetComponent<MeshRenderer>().materials[8];
+        waterRenderer.materials = LiquidMats.ToArray();
 
         waterMeshFilter = waterChunk.AddComponent<MeshFilter>();
         waterMeshCollider = waterChunk.AddComponent<MeshCollider>();
 
-        waterMeshCollider.convex = true;
-        waterMeshCollider.isTrigger = true;
+
 
     }
 
@@ -268,6 +272,7 @@ public class Chunk : MonoBehaviour
         }
 
         List<int> waterTriangles = new List<int>();
+        List<int> lavaTriangles = new List<int>();
 
         var normals = new List<Vector3>();
         var waterNormals = new List<Vector3>();
@@ -321,7 +326,7 @@ public class Chunk : MonoBehaviour
                     else { front = this[x, y, z - 1]; }
                     if (_transparentBlockIDs.Contains(front) && front != voxelType)
                     {
-                        if (voxelType == 9)
+                        if (voxelType == 9 || voxelType == 11)
                         {
                             foreach (var vert in _frontVertices)
                                 waterVertices.Add(pos + vert);
@@ -334,11 +339,21 @@ public class Chunk : MonoBehaviour
 
                             foreach (var normal in _faceNormals)
                                 waterNormals.Add(normal);
-
-                            foreach (var tri in _frontTriangles)
+                            if (voxelType == 9)
                             {
-                                waterTriangles.Add(waterVertPos + tri);
+                                foreach (var tri in _frontTriangles)
+                                {
+                                    waterTriangles.Add(waterVertPos + tri);
+                                }
                             }
+                            else
+                            {
+                                foreach (var tri in _frontTriangles)
+                                {
+                                    lavaTriangles.Add(waterVertPos + tri);
+                                }
+                            }
+
 
                         }
                         else
@@ -398,7 +413,7 @@ public class Chunk : MonoBehaviour
                         top = 0;
                     if (_transparentBlockIDs.Contains(top) && top != voxelType)
                     {
-                        if (voxelType == 9)
+                        if (voxelType == 9 || voxelType == 11)
                         {
                             foreach (var vert in _topVertices)
                                 waterVertices.Add(pos + vert);
@@ -411,11 +426,21 @@ public class Chunk : MonoBehaviour
 
                             foreach (var normal in _faceNormals)
                                 waterNormals.Add(normal);
-
-                            foreach (var tri in _topTriangles)
+                            if (voxelType == 9)
                             {
-                                waterTriangles.Add(waterVertPos + tri);
+                                foreach (var tri in _topTriangles)
+                                {
+                                    waterTriangles.Add(waterVertPos + tri);
+                                }
                             }
+                            else
+                            {
+                                foreach (var tri in _topTriangles)
+                                {
+                                    lavaTriangles.Add(waterVertPos + tri);
+                                }
+                            }
+
                         }
                         else
                         {
@@ -467,7 +492,7 @@ public class Chunk : MonoBehaviour
                     if (_transparentBlockIDs.Contains(right) && right != voxelType)
                     {
 
-                        if (voxelType == 9)
+                        if (voxelType == 9 || voxelType == 11)
                         {
                             foreach (var vert in _rightVertices)
                                 waterVertices.Add(pos + vert);
@@ -479,11 +504,22 @@ public class Chunk : MonoBehaviour
 
                             foreach (var normal in _faceNormals)
                                 waterNormals.Add(normal);
-
-                            foreach (var tri in _rightTriangles)
+                            if (voxelType == 9)
                             {
-                                waterTriangles.Add(waterVertPos + tri);
+                                foreach (var tri in _rightTriangles)
+                                {
+                                    waterTriangles.Add(waterVertPos + tri);
+                                }
                             }
+                            else
+                            {
+                                foreach (var tri in _rightTriangles)
+                                {
+                                    lavaTriangles.Add(waterVertPos + tri);
+                                }
+
+                            }
+
                         }
                         else
                         {
@@ -535,7 +571,7 @@ public class Chunk : MonoBehaviour
 
                     if (_transparentBlockIDs.Contains(left) && left != voxelType)
                     {
-                        if (voxelType == 9)
+                        if (voxelType == 9 || voxelType == 11)
                         {
                             foreach (var vert in _leftVertices)
                                 waterVertices.Add(pos + vert);
@@ -547,11 +583,21 @@ public class Chunk : MonoBehaviour
 
                             foreach (var normal in _faceNormals)
                                 waterNormals.Add(normal);
-
-                            foreach (var tri in _leftTriangles)
+                            if (voxelType == 9)
                             {
-                                waterTriangles.Add(waterVertPos + tri);
+                                foreach (var tri in _leftTriangles)
+                                {
+                                    waterTriangles.Add(waterVertPos + tri);
+                                }
                             }
+                            else
+                            {
+                                foreach (var tri in _leftTriangles)
+                                {
+                                    lavaTriangles.Add(waterVertPos + tri);
+                                }
+                            }
+
                         }
                         else
                         {
@@ -603,7 +649,7 @@ public class Chunk : MonoBehaviour
 
                     if (_transparentBlockIDs.Contains(back) && back != voxelType)
                     {
-                        if (voxelType == 9)
+                        if (voxelType == 9 || voxelType == 11)
                         {
                             foreach (var vert in _backVertices)
                                 waterVertices.Add(pos + vert);
@@ -615,11 +661,23 @@ public class Chunk : MonoBehaviour
 
                             foreach (var normal in _faceNormals)
                                 waterNormals.Add(normal);
-
-                            foreach (var tri in _backTriangles)
+                            if (voxelType == 9)
                             {
-                                waterTriangles.Add(waterVertPos + tri);
+                                foreach (var tri in _backTriangles)
+                                {
+                                    waterTriangles.Add(waterVertPos + tri);
+                                }
+
                             }
+                            else
+                            {
+                                foreach (var tri in _backTriangles)
+                                {
+                                    lavaTriangles.Add(waterVertPos + tri);
+                                }
+
+                            }
+
                         }
                         else
                         {
@@ -673,7 +731,7 @@ public class Chunk : MonoBehaviour
 
                     if (_transparentBlockIDs.Contains(bottom) && bottom != voxelType)
                     {
-                        if (voxelType == 9)
+                        if (voxelType == 9 || voxelType == 11)
                         {
                             foreach (var vert in _backVertices)
                                 waterVertices.Add(pos + vert);
@@ -685,11 +743,21 @@ public class Chunk : MonoBehaviour
 
                             foreach (var normal in _faceNormals)
                                 waterNormals.Add(normal);
-
-                            foreach (var tri in _backTriangles)
+                            if (voxelType == 9)
                             {
-                                waterTriangles.Add(waterVertPos + tri);
+                                foreach (var tri in _backTriangles)
+                                {
+                                    waterTriangles.Add(waterVertPos + tri);
+                                }
                             }
+                            else
+                            {
+                                foreach (var tri in _backTriangles)
+                                {
+                                    lavaTriangles.Add(waterVertPos + tri);
+                                }
+                            }
+
                         }
                         else
                         {
@@ -732,9 +800,10 @@ public class Chunk : MonoBehaviour
         meshCollider.sharedMesh = mesh;
 
         var waterMesh = new Mesh();
-        waterMesh.subMeshCount = 1;
+        waterMesh.subMeshCount = 2;
         waterMesh.SetVertices(waterVertices);
         waterMesh.SetTriangles(waterTriangles.ToArray(), 0);
+        waterMesh.SetTriangles(lavaTriangles.ToArray(), 1);
         waterMesh.SetNormals(waterNormals);
         waterMeshFilter.mesh = waterMesh;
         waterMeshCollider.sharedMesh = waterMesh;

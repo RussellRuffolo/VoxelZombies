@@ -422,7 +422,7 @@ MonoBehaviour:
   - {fileID: 2100000, guid: 52b7d70b1de7c4ce09662b77c14d9fda, type: 2}
   - {fileID: 2100000, guid: 52b7d70b1de7c4ce09662b77c14d9fda, type: 2}
   - {fileID: 2100000, guid: c55afdc4a8a3b4890b07cc7d176510bb, type: 2}
-  - {fileID: 2100000, guid: c55afdc4a8a3b4890b07cc7d176510bb, type: 2}
+  - {fileID: 2100000, guid: cd3ae2b363c75c1458f9b0d44da74d3d, type: 2}
   - {fileID: 2100000, guid: 779d150f482fd6d4e9857328fefb8fd2, type: 2}
   - {fileID: 2100000, guid: 01fa14b73a9793149a4fc92f9323ffdf, type: 2}
   - {fileID: 2100000, guid: 814cd19cea1851a4d97007eeebc39255, type: 2}
@@ -514,6 +514,7 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: 
   RoundTime: 6000
+  MinuteCounter: 0
   inStartTime: 0
 --- !u!114 &835489454
 MonoBehaviour:

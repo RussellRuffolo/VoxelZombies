@@ -67,21 +67,6 @@ public class HalfBlockDetector : MonoBehaviour
 
     }
 
-    public bool CheckGrounded()
-    {
-        bool found = false;
-        foreach (ContactPoint cp in allCPs)
-        {
-            //Pointing with some up direction
-            if (cp.normal.y == 1)
-            {
-                found = true;
-            }
-        }
-
-        return found;
-    }
-
     private void OnCollisionEnter(Collision collision)
     {
         allCPs.AddRange(collision.contacts);
@@ -106,6 +91,21 @@ public class HalfBlockDetector : MonoBehaviour
             if (cp.normal.y == 1 && (found == false || cp.normal.y > groundCP.normal.y))
             {
                 groundCP = cp;
+                found = true;
+            }
+        }
+
+        return found;
+    }
+
+    public bool CheckGrounded()
+    {
+        bool found = false;
+        foreach (ContactPoint cp in allCPs)
+        {
+            //Pointing with some up direction
+            if (cp.normal.y == 1)
+            {             
                 found = true;
             }
         }

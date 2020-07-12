@@ -2,7 +2,6 @@
 using System.Collections.Generic;
 using UnityEngine;
 using DarkRift;
-using System;
 using fNbt;
 using System.IO;
 
@@ -25,8 +24,8 @@ public class VoxelEngine : MonoBehaviour
     const ushort MAP_TAG = 4;
     private void Awake()
     {
-        //MapData EightBit = new MapData("8Bit", 7563, 42, 240, 14);
-       // mapList.Add(EightBit);
+        MapData EightBit = new MapData("8Bit", 7563, 42, 240, 14);
+        mapList.Add(EightBit);
 
        // MapData ThreeSixty = new MapData("360", 7013, 48, 13, 25);
        // mapList.Add(ThreeSixty);
@@ -198,10 +197,24 @@ public class VoxelEngine : MonoBehaviour
         world.Chunks.Clear();
     }
 
-
+    //returns a map other than current map
+    public MapData GetRandomMap()
+    {
+        int mapIndex = Random.Range(0, mapList.Count);
+        if(currentMap != mapList[mapIndex])
+        {
+            return mapList[mapIndex];
+        }
+        else
+        {
+            return GetRandomMap();
+        }
+    }
 
     
 }
+
+
 
 public class MapData
 {

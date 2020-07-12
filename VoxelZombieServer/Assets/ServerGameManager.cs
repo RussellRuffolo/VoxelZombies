@@ -13,6 +13,8 @@ public class ServerGameManager : MonoBehaviour
 
     public bool inStartTime = false;
 
+    public int map1Votes, map2Votes, map3Votes;
+
     //TODO- MAP VOTING
 
     private void Awake()
@@ -43,16 +45,24 @@ public class ServerGameManager : MonoBehaviour
         StartCoroutine(startDelay());
     }
 
-    public void EndRound(bool HumansWin)
+    public void EndRound()
     {
-        if(HumansWin)
+        vServer.SendPublicChat("Vote for the next map:", 2);
+        MapData map1 = vEngine.GetRandomMap();
+        MapData map2 = vEngine.GetRandomMap();
+        while(map2 == map1)
         {
-
+            map2 = vEngine.GetRandomMap();
         }
-        else
+        MapData map3 = vEngine.GetRandomMap();
+        while(map3 == map2 || map3 == map1)
         {
-
+            map3 = vEngine.GetRandomMap();
         }
+
+        vServer.SendPublicChat("1: " + map1.Name + " 2: " + map2.Name + " 3: " + map3.Name, 2);
+
+        StartCoroutine(VoteDelay());
 
     }
 
@@ -63,13 +73,13 @@ public class ServerGameManager : MonoBehaviour
             RoundTime -= Time.deltaTime;
             if(RoundTime < MinuteCounter)
             {
-                vServer.SendChat("There are " + MinuteCounter / 60 + " minutes left in this round.", 2);
+                vServer.SendPublicChat("There are " + MinuteCounter / 60 + " minutes left in this round.", 2);
                 MinuteCounter -= 60;
             }
         }
         else if(RoundTime <= 0)
         {
-            vServer.SendChat("Humans win!", 2);
+            vServer.SendPublicChat("Humans win!", 2);
             StartRound();
         }
     }
@@ -90,7 +100,7 @@ public class ServerGameManager : MonoBehaviour
             }
         }
 
-        vServer.SendChat("Zombies win!", 2);
+        vServer.SendPublicChat("Zombies win!", 2);
 
         //if no players were human then zombies win
     }
@@ -104,8 +114,13 @@ public class ServerGameManager : MonoBehaviour
         if(firstZombie != 1000)
         {
             vServer.UpdatePlayerState(firstZombie, 1);
-            vServer.SendChat("The Infection begins with " + vServer.playerNames[firstZombie] + "!", 2);
+            vServer.SendPublicChat("The Infection begins with " + vServer.playerNames[firstZombie] + "!", 2);
         }
         
+    }
+
+    IEnumerator VoteDelay()
+    {
+        yield return new WaitForSeconds(20);
     }
 }

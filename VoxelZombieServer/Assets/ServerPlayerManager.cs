@@ -47,21 +47,31 @@ public class ServerPlayerManager : MonoBehaviour
 
             //possibly only need to send x and z, examine later.
             Vector3 moveVector = new Vector3(reader.ReadSingle(), reader.ReadSingle(), reader.ReadSingle());
-
+            Debug.Log("Move vector is: " + moveVector.x + " " + moveVector.y + " " + moveVector.z);
             bool Jump = reader.ReadBoolean();
+
+            float timeStamp = reader.ReadSingle();
 
             InputDictionary[clientID].moveVector = moveVector;
        
-            InputDictionary[clientID].Jump = Jump;    
+            InputDictionary[clientID].Jump = Jump;
 
+            InputDictionary[clientID].ClientTimeStamp = timeStamp;
+
+            InputDictionary[clientID].ServerTimeStamp = Time.time;
             
         }
     }
 
     private void Update()
     {
-        RunInputs();
+       // RunInputs();
 
+    }
+
+    private void FixedUpdate()
+    {
+        RunInputs();
     }
 
     private void RunInputs()
@@ -79,7 +89,7 @@ public class ServerPlayerManager : MonoBehaviour
 
             if(inputs.moveState == 0) //normal movement
             {
-                bool onGround = playerTransform.GetComponent<HalfBlockDetector>().grounded;
+                bool onGround = playerTransform.GetComponent<HalfBlockDetector>().CheckGrounded();
            
                 if (onGround)
                 {
@@ -100,6 +110,7 @@ public class ServerPlayerManager : MonoBehaviour
             }
             else if(inputs.moveState == 1) //water movement
             {
+
                 if(inputs.Jump)
                 {
                     yVel = verticalWaterSpeed;
@@ -126,6 +137,9 @@ public class PlayerInputs
     public Vector3 moveVector;
     public bool Jump;
 
+    public float ClientTimeStamp;
+    public float ServerTimeStamp;
+
     //0 is normal, 1 is water, 2 is lava
     public ushort moveState;
 
@@ -134,5 +148,7 @@ public class PlayerInputs
         moveVector = moveVec;
         Jump = jump;
         moveState = 0;
+        ClientTimeStamp = 0;
+        ServerTimeStamp = 0;
     }
 }

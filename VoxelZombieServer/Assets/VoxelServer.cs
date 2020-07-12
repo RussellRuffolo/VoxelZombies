@@ -12,13 +12,14 @@ public class VoxelServer : MonoBehaviour
     const ushort ADD_PLAYER_TAG = 2;
     const ushort INPUT_TAG = 3;
     const ushort BLOCK_EDIT_TAG = 4;
-    const ushort POSITION_UPDATE_TAG = 5;
+    const ushort OTHER_POSITION_TAG = 5;
     const ushort PLAYER_STATE_TAG = 6;
     const ushort REMOVE_PLAYER_TAG = 7;
     const ushort MAP_LOADED_TAG = 8;
     const ushort MAP_RELOADED_TAG = 9;
     public const ushort LOGIN_ATTEMPT_TAG = 10;
     public const ushort CHAT_TAG = 11;
+    public const ushort CLIENT_POSITION_TAG = 12;
 
     XmlUnityServer XMLServer;
     DarkRiftServer Server;
@@ -134,13 +135,41 @@ public class VoxelServer : MonoBehaviour
             string chatMessage = reader.ReadString();
             ushort colorTag = reader.ReadUInt16();
 
-            string namedChatMessage = playerNames[e.Client.ID] + ": " + chatMessage;
+            if(chatMessage[0] == '/')
+            {
+                Debug.Log("Chat command");
+                chatMessage.Remove(0);
+                string command = "";
+                while (chatMessage[0] != ' ' && chatMessage.Length > 1)
+                {
+                    command += chatMessage[0];
+                    chatMessage.Remove(0);
+                }
+                chatMessage.Remove(0);
 
-            SendChat(namedChatMessage, colorTag);
+                switch(command)
+                {
+                    case "vote":
+                        Debug.Log("Remaining vote message is: " + chatMessage);
+                        break;
+                    default:
+                        SendPrivateChat("The command: " + command + " does not exist", 2, e.Client.ID);
+                        break;
+                }
+
+            }
+            else
+            {
+                string namedChatMessage = playerNames[e.Client.ID] + ": " + chatMessage;
+
+                SendPublicChat(namedChatMessage, colorTag);
+            }
+
+        
         }
     }
 
-    public void SendChat(string chatMessage, ushort colorTag)
+    public void SendPublicChat(string chatMessage, ushort colorTag)
     {
         using (DarkRiftWriter chatWriter = DarkRiftWriter.Create())
         {
@@ -157,7 +186,26 @@ public class VoxelServer : MonoBehaviour
             }
         }
     }
-    
+
+    public void SendPrivateChat(string chatMessage, ushort colorTag, ushort recipientID)
+    {
+        using (DarkRiftWriter chatWriter = DarkRiftWriter.Create())
+        {
+
+            chatWriter.Write(chatMessage);
+            chatWriter.Write(colorTag);
+
+            using (Message newChatMessage = Message.Create(CHAT_TAG, chatWriter))
+            {
+                foreach (IClient c in loadedPlayers)
+                {
+                    if(c.ID == recipientID)
+                      c.SendMessage(newChatMessage, SendMode.Reliable);
+                }
+            }
+        }
+    }
+
     private void HandleLogin(MessageReceivedEventArgs e)
     {
         using (DarkRiftReader reader = e.GetMessage().GetReader())
@@ -314,7 +362,7 @@ public class VoxelServer : MonoBehaviour
                 positionWriter.Write(playerPosition.z);
 
 
-                using (Message positionMessage = Message.Create(POSITION_UPDATE_TAG, positionWriter))
+                using (Message positionMessage = Message.Create(OTHER_POSITION_TAG, positionWriter))
                 {
                     e.Client.SendMessage(positionMessage, SendMode.Unreliable);
                 }
@@ -373,14 +421,50 @@ public class VoxelServer : MonoBehaviour
             positionWriter.Write(newPosition.x);
             positionWriter.Write(newPosition.y);
             positionWriter.Write(newPosition.z);
-        
 
-            using (Message positionMessage = Message.Create(POSITION_UPDATE_TAG, positionWriter))
+
+
+            using (Message positionMessage = Message.Create(OTHER_POSITION_TAG, positionWriter))
             {
                 foreach (IClient c in loadedPlayers)
                 {
-                    c.SendMessage(positionMessage, SendMode.Unreliable);
-                   // Debug.Log("Sent Position Update Message");
+                    if (c.ID != id)
+                    {
+                        c.SendMessage(positionMessage, SendMode.Unreliable);
+                    }
+
+                }
+            }
+
+        }
+    }
+
+    public void SendPositionUpdate(ushort id, Vector3 newPosition, float ClientTimeStamp, float ServerTimeDelta, Vector3 velocity)
+    { 
+        using (DarkRiftWriter positionWriter = DarkRiftWriter.Create())
+        {
+            positionWriter.Write(id);
+
+            positionWriter.Write(newPosition.x);
+            positionWriter.Write(newPosition.y);
+            positionWriter.Write(newPosition.z);
+
+            positionWriter.Write(ClientTimeStamp);
+            positionWriter.Write(ServerTimeDelta);
+
+            positionWriter.Write(velocity.x);
+            positionWriter.Write(velocity.y);
+            positionWriter.Write(velocity.z);
+
+            using (Message positionMessage = Message.Create(CLIENT_POSITION_TAG, positionWriter))
+            {
+                foreach (IClient c in loadedPlayers)
+                {
+                    if(c.ID == id)
+                    {
+                        c.SendMessage(positionMessage, SendMode.Unreliable);
+                    }                 
+           
 
                 }
             }

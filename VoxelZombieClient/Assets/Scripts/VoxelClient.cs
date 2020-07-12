@@ -80,9 +80,13 @@ namespace Client
                         Debug.Log("Received Block Edit Message");
                         ApplyBlockEdit(e);
                         break;
-                    case Tags.POSITION_UPDATE_TAG:
+                    case Tags.OTHER_POSITION_TAG:
                         Debug.Log("Received Position Update Message");
                         MovePlayer(e);
+                        break;
+                    case Tags.CLIENT_POSITION_TAG:
+                        Debug.Log("Received Client Position Message");
+                        PerformClientPrediction(e);
                         break;
                     case Tags.PLAYER_STATE_TAG:
                         Debug.Log("Received Player State Message");
@@ -106,6 +110,27 @@ namespace Client
             }
 
         }
+
+        void PerformClientPrediction(MessageReceivedEventArgs e)
+        {
+            using (Message message = e.GetMessage() as Message)
+            {
+                using (DarkRiftReader reader = message.GetReader())
+                {
+                    ushort id = reader.ReadUInt16();
+
+                    Vector3 serverPosition = new Vector3(reader.ReadSingle(), reader.ReadSingle(), reader.ReadSingle());
+
+                    float clientTimeStamp = reader.ReadSingle();
+                    float serverTimeDelta = reader.ReadSingle();
+
+                    Vector3 velocity = new Vector3(reader.ReadSingle(), reader.ReadSingle(), reader.ReadSingle());
+
+                    localPlayerTransform.GetComponent<ClientPlayerController>().ClientPrediction(serverPosition, clientTimeStamp, serverTimeDelta, velocity);
+                }
+            }
+        }
+
 
         void LoadMap(MessageReceivedEventArgs e)
         {
@@ -276,8 +301,9 @@ namespace Client
 
         }
 
-        public void SendInputs(Vector3 moveVector, bool Jump)
+        public void SendInputs(Vector3 moveVector, bool Jump, float timeStamp)
         {
+            Debug.Log("Sending Inputs");
             using (DarkRiftWriter InputWriter = DarkRiftWriter.Create())
             {
                 InputWriter.Write(moveVector.x);
@@ -285,6 +311,8 @@ namespace Client
                 InputWriter.Write(moveVector.z);
 
                 InputWriter.Write(Jump);
+
+                InputWriter.Write(timeStamp);
 
                 using (Message InputMessage = Message.Create(Tags.INPUT_TAG, InputWriter))
                 {
@@ -410,8 +438,9 @@ namespace Client
 
                 if (ID == Client.ID)
                 {
-                    if (localPlayerTransform != null)
-                        localPlayerTransform.position = position;
+                    //This will be replaced with real netcode
+                    //if (localPlayerTransform != null)
+                    //    localPlayerTransform.position = position;
                 }
                 else
                 {

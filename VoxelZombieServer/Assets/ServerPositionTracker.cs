@@ -12,15 +12,20 @@ public class ServerPositionTracker : MonoBehaviour
 
     VoxelServer vServer;
     ServerPlayerManager pManager;
+    ServerGameManager gManager;
 
     private World world;
+
+    Rigidbody rb;
 
     private void Awake()
     {
         lastPosition = transform.position;
         vServer = GameObject.FindGameObjectWithTag("Network").GetComponent<VoxelServer>();
         pManager = GameObject.FindGameObjectWithTag("Network").GetComponent<ServerPlayerManager>();
+        gManager = GameObject.FindGameObjectWithTag("Network").GetComponent<ServerGameManager>();
         world = GameObject.FindGameObjectWithTag("Network").GetComponent<VoxelEngine>().world;
+        rb = GetComponent<Rigidbody>();
     }
 
     private void Update()
@@ -28,7 +33,10 @@ public class ServerPositionTracker : MonoBehaviour
 
         if (Vector3.Distance(lastPosition, transform.position) > minMoveDelta)
         {
+            //serverTimeDelta is the time between the last input being received and this position update occurring. 
+            float serverTimeDelta = Time.time - pManager.InputDictionary[ID].ServerTimeStamp;
             vServer.SendPositionUpdate(ID, transform.position);
+            vServer.SendPositionUpdate(ID, transform.position, pManager.InputDictionary[ID].ClientTimeStamp, serverTimeDelta, rb.velocity);
             lastPosition = transform.position;
         }
     }
@@ -45,7 +53,8 @@ public class ServerPositionTracker : MonoBehaviour
                 {
                     Debug.Log("Infection!");
                     vServer.UpdatePlayerState(otherTracker.ID, 1);
-                    vServer.SendChat(vServer.playerNames[otherTracker.ID] + " was infected by " + vServer.playerNames[ID] + "!", 2);
+                    vServer.SendPublicChat(vServer.playerNames[otherTracker.ID] + " was infected by " + vServer.playerNames[ID] + "!", 2);
+                    gManager.CheckZombieWin();
                 }
 
             }
