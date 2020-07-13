@@ -6,6 +6,7 @@ namespace Client
 {
     public class ClientPlayerController : MonoBehaviour
     {
+        public GameObject rotationTracker;
 
         public float playerSpeed;
         public float jumpSpeed;
@@ -29,6 +30,7 @@ namespace Client
 
         private Vector3 lastMoveVector = Vector3.zero;
         private bool lastJump = false;
+        private float lastRotation = 0;
 
         public ushort moveState = 0;
 
@@ -56,18 +58,20 @@ namespace Client
 
             Cursor.lockState = CursorLockMode.Locked;
             Cursor.visible = false;
+            
         }
 
         // Update is called once per frame
         void Update()
         {
+
             CameraLook();
-        
 
         }
 
         private void FixedUpdate()
         {
+            
             MovementInput();
         }
 
@@ -79,14 +83,17 @@ namespace Client
             rotationX = Mathf.Clamp(rotationX, minimumX, maximumX);
 
 
-            playerCam.transform.localEulerAngles = new Vector3(-rotationX, 0, 0);
-            transform.eulerAngles = new Vector3(0, rotationY, 0);
+            playerCam.transform.localEulerAngles = new Vector3(-rotationX, rotationY, 0);
+            rotationTracker.transform.eulerAngles = new Vector3(0, rotationY, 0);
+           // transform.eulerAngles = new Vector3(0, rotationY, 0);
 
         }
 
         void MovementInput()
         {
-            Vector3 playerForward = new Vector3(transform.forward.x, 0, transform.forward.z);
+
+            //Vector3 playerForward = new Vector3(transform.forward.x, 0, transform.forward.z);    
+            Vector3 playerForward = new Vector3(rotationTracker.transform.forward.x, 0, rotationTracker.transform.forward.z);
             Vector3 playerRight = Quaternion.AngleAxis(90, Vector3.up) * playerForward;
             Vector3 speedVector = Vector3.zero;
             if (Input.GetKey(KeyCode.W))
@@ -116,11 +123,12 @@ namespace Client
                 jump = false;
             }
 
+
             //run inputs here
-            Rigidbody playerRB = GetComponent<Rigidbody>();
+            Rigidbody playerRB = GetComponent<Rigidbody>();            
 
             float yVel = playerRB.velocity.y;
-
+            moveState = pTracker.CheckPlayerState(moveState);
             if (moveState == 0) //normal movement
             {
                 bool onGround = hbDetector.CheckGrounded();
@@ -158,15 +166,18 @@ namespace Client
                 playerRB.velocity = speedVector * horizontalWaterSpeed;
                 playerRB.velocity += yVel * Vector3.up;
             }
-            //if inputs have changed send the updated values to the server
-            if (speedVector != lastMoveVector || jump != lastJump)
-            {
+
+
+
+            //if inputs have changed send the updated values to the server           
+             if (speedVector != lastMoveVector || jump != lastJump)
+             {
                 float inputTimeStamp = Time.time;
                 vClient.SendInputs(speedVector, jump, inputTimeStamp);
                 LoggedInputs.Add(new ClientInputs(speedVector, jump, inputTimeStamp));
                 lastMoveVector = speedVector;
                 lastJump = jump;
-            }
+             }
 
             if (Input.GetKeyDown(KeyCode.Escape))
             {
@@ -183,6 +194,7 @@ namespace Client
 
         public void ClientPrediction(Vector3 serverPosition, float ClientTimeStamp, float ServerTimeDelta, Vector3 velocity)
         {
+            
             Vector3 currentPosition = transform.position;
 
             ClientInputs currentInputs = GetCurrentInputs(ClientTimeStamp);
@@ -191,11 +203,15 @@ namespace Client
 
             Rigidbody playerRB = GetComponent<Rigidbody>();
             playerRB.velocity = velocity;
+
+            //begin the prediction from the server position
             transform.position = serverPosition;
 
             ushort simulMoveState = moveState;
 
             Physics.autoSimulation = false;
+
+            Debug.Log("The number of simulation steps is: " + (Time.time - simulTime) / Time.fixedDeltaTime);
             while (simulTime < Time.time)
             {
                 float yVel = playerRB.velocity.y;
@@ -239,19 +255,30 @@ namespace Client
                     playerRB.velocity += yVel * Vector3.up;
                 }
 
-                Physics.Simulate(Time.fixedDeltaTime);
-                simulTime += Time.fixedDeltaTime;
+                if (Time.time - simulTime < Time.fixedDeltaTime)
+                {
+                    Physics.Simulate(Time.time - simulTime);
+                    simulTime += Time.time - simulTime;
+                }
+                else
+                {
+                    Physics.Simulate(Time.fixedDeltaTime);
+                    simulTime += Time.fixedDeltaTime;
+                }
+             
+              
                 currentInputs = GetCurrentInputs(simulTime);
             }
             Physics.autoSimulation = true;
 
             if(Vector3.Distance(currentPosition, transform.position) > .01f)
             {
-                Debug.Log("Found error: " + Vector3.Distance(currentPosition, transform.position));
+               Debug.Log("Found error: " + Vector3.Distance(currentPosition, transform.position));
              
             }
-
-         
+            
+            //This ignores the prediction, used for testing
+           // transform.position = currentPosition;
 
         }
 

@@ -65,43 +65,43 @@ namespace Client
                 switch (message.Tag)
                 {
                     case Tags.MAP_TAG:
-                        Debug.Log("Received Map Message");
+                        //Debug.Log("Received Map Message");
                         LoadMap(e);
                         break;
                     case Tags.PLAYER_INIT_TAG:
-                        Debug.Log("Received Player Init Message");
+                        //Debug.Log("Received Player Init Message");
                         InitPlayers(e);
                         break;
                     case Tags.ADD_PLAYER_TAG:
-                        Debug.Log("Received Player Add Message");
+                       // Debug.Log("Received Player Add Message");
                         AddPlayer(e);
                         break;
                     case Tags.BLOCK_EDIT_TAG:
-                        Debug.Log("Received Block Edit Message");
+                       // Debug.Log("Received Block Edit Message");
                         ApplyBlockEdit(e);
                         break;
                     case Tags.OTHER_POSITION_TAG:
-                        Debug.Log("Received Position Update Message");
+                       // Debug.Log("Received Position Update Message");
                         MovePlayer(e);
                         break;
                     case Tags.CLIENT_POSITION_TAG:
-                        Debug.Log("Received Client Position Message");
+                       // Debug.Log("Received Client Position Message");
                         PerformClientPrediction(e);
                         break;
                     case Tags.PLAYER_STATE_TAG:
-                        Debug.Log("Received Player State Message");
+                      //  Debug.Log("Received Player State Message");
                         SetPlayerState(e);
                         break;
                     case Tags.REMOVE_PLAYER_TAG:
-                        Debug.Log("Received Player Remove Message");
+                       // Debug.Log("Received Player Remove Message");
                         RemovePlayer(e);
                         break;
                     case Tags.CHAT_TAG:
-                        Debug.Log("Received Chat Message");
+                       // Debug.Log("Received Chat Message");
                         ReceiveChat(e);
                         break;
                     default:
-                        Debug.Log("Received message with tag: " + e.Tag);                     
+                        Debug.Log("Received message with tag: " + e.Tag);                    
 
                         break;
 
@@ -120,6 +120,7 @@ namespace Client
                     ushort id = reader.ReadUInt16();
 
                     Vector3 serverPosition = new Vector3(reader.ReadSingle(), reader.ReadSingle(), reader.ReadSingle());
+      
 
                     float clientTimeStamp = reader.ReadSingle();
                     float serverTimeDelta = reader.ReadSingle();
@@ -205,6 +206,9 @@ namespace Client
 
                         Vector3 eulerRotation = new Vector3(reader.ReadSingle(),
                                                 reader.ReadSingle(), reader.ReadSingle());
+
+                        string playerName = reader.ReadString();
+
                         if (PlayerID == Client.ID)
                         {
                             Debug.Log("Spawn Local Player");
@@ -226,6 +230,8 @@ namespace Client
                             GameObject NetworkPlayer = GameObject.Instantiate(NetworkPlayerPrefab,
                                          position, Quaternion.Euler(eulerRotation.x, eulerRotation.y, eulerRotation.z));
 
+                            NetworkPlayer.GetComponentInChildren<NameTagManager>().SetName(playerName);
+
                             if (StateTag == 0)
                             {
                                 NetworkPlayer.GetComponent<MeshRenderer>().material.color = Color.white;
@@ -236,6 +242,11 @@ namespace Client
                             }
 
                             NetworkPlayerDictionary.Add(PlayerID, NetworkPlayer.transform);
+                        }
+
+                        foreach(Transform netplayerTransform in NetworkPlayerDictionary.Values)
+                        {
+                            netplayerTransform.GetComponentInChildren<NameTagManager>().SetPlayerTransform(localPlayerTransform);
                         }
 
 
@@ -261,8 +272,12 @@ namespace Client
 
                     ushort stateTag = reader.ReadUInt16();
 
+                    string playerName = reader.ReadString();
+
                     GameObject NetworkPlayer = GameObject.Instantiate(NetworkPlayerPrefab,
                                     position, Quaternion.Euler(eulerRotation.x, eulerRotation.y, eulerRotation.z));
+                    NetworkPlayer.GetComponentInChildren<NameTagManager>().SetName(playerName);
+                    NetworkPlayer.GetComponentInChildren<NameTagManager>().SetPlayerTransform(localPlayerTransform);
 
                     Color newColor;
 
@@ -433,6 +448,7 @@ namespace Client
                 float x = reader.ReadSingle();
                 float y = reader.ReadSingle();
                 float z = reader.ReadSingle();
+
 
                 Vector3 position = new Vector3(x, y, z);
 

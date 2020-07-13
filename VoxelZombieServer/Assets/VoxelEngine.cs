@@ -20,7 +20,6 @@ public class VoxelEngine : MonoBehaviour
     public BoundaryController bController;
     public WaterEngine wEngine;
 
-   
     const ushort MAP_TAG = 4;
     private void Awake()
     {
@@ -62,12 +61,15 @@ public class VoxelEngine : MonoBehaviour
         // MapData babel = new MapData("babel", 17974, 0, 0, 0);
         // mapList.Add(babel);
 
+        MapData digital_world = new MapData("digital_world", 0, 1, 54, 1);
+        mapList.Add(digital_world);
+
         
     }
 
     public void LoadMap(MapData map)
     {
-     
+      
         UnloadMap();
 
         currentMap = map;
@@ -185,7 +187,7 @@ public class VoxelEngine : MonoBehaviour
                 }
             }
         }
-        wEngine.RenderWater();
+       // wEngine.RenderWater();
     }
     
     public  void UnloadMap()

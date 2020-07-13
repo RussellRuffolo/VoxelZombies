@@ -20,15 +20,18 @@ namespace Client
 
         private void OnTriggerEnter(Collider other)
         {
+            /*
             if (other.CompareTag("Water"))
             {
                 Debug.Log("In water");
                 pController.moveState = 1;
             }
+            */
         }
 
         private void OnTriggerExit(Collider other)
         {
+            /*
             if (other.CompareTag("Water"))
             {
                 Vector3 feetPosition = new Vector3(transform.position.x, transform.position.y - .75f, transform.position.z);
@@ -41,9 +44,10 @@ namespace Client
                 }
 
             }
+            */
         }
 
-       public ushort CheckPlayerState(ushort lastState)
+        public ushort CheckPlayerState(ushort lastState)
         {
             Collider[] thingsHit = Physics.OverlapBox(transform.position + Vector3.down * .1f, colliderHalfExtents);
 

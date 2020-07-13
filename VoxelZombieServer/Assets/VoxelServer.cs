@@ -279,6 +279,8 @@ public class VoxelServer : MonoBehaviour
                 PlayerWriter.Write(playerTransform.rotation.eulerAngles.y);
                 PlayerWriter.Write(playerTransform.rotation.eulerAngles.z);
 
+                PlayerWriter.Write(playerNames[playerID]);
+
             }
 
             using (Message playerMessage = Message.Create(PLAYER_INIT_TAG, PlayerWriter))
@@ -307,6 +309,8 @@ public class VoxelServer : MonoBehaviour
             NewPlayerWriter.Write(playerTransform.rotation.eulerAngles.z);
 
             NewPlayerWriter.Write(playerTransform.GetComponent<ServerPositionTracker>().stateTag);
+
+            NewPlayerWriter.Write(playerNames[playerID]);
 
             using (Message NewPlayerMessage = Message.Create(ADD_PLAYER_TAG, NewPlayerWriter))
             {
@@ -421,8 +425,6 @@ public class VoxelServer : MonoBehaviour
             positionWriter.Write(newPosition.x);
             positionWriter.Write(newPosition.y);
             positionWriter.Write(newPosition.z);
-
-
 
             using (Message positionMessage = Message.Create(OTHER_POSITION_TAG, positionWriter))
             {

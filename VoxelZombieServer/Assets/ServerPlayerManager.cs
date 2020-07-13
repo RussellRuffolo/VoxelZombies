@@ -26,7 +26,7 @@ public class ServerPlayerManager : MonoBehaviour
         newPlayer.GetComponent<ServerPositionTracker>().ID = PlayerID;
         newPlayer.GetComponent<ServerPositionTracker>().stateTag = stateTag;
         PlayerDictionary.Add(PlayerID, newPlayer.transform);
-        InputDictionary.Add(PlayerID, new PlayerInputs(Vector3.zero, false));
+        InputDictionary.Add(PlayerID, new PlayerInputs(Vector3.zero, false, 0));
     }
 
     public void RemovePlayer(ushort PlayerID)
@@ -50,6 +50,7 @@ public class ServerPlayerManager : MonoBehaviour
             Debug.Log("Move vector is: " + moveVector.x + " " + moveVector.y + " " + moveVector.z);
             bool Jump = reader.ReadBoolean();
 
+
             float timeStamp = reader.ReadSingle();
 
             InputDictionary[clientID].moveVector = moveVector;
@@ -61,12 +62,6 @@ public class ServerPlayerManager : MonoBehaviour
             InputDictionary[clientID].ServerTimeStamp = Time.time;
             
         }
-    }
-
-    private void Update()
-    {
-       // RunInputs();
-
     }
 
     private void FixedUpdate()
@@ -84,8 +79,9 @@ public class ServerPlayerManager : MonoBehaviour
 
             PlayerInputs inputs = InputDictionary[id];
 
-
             float yVel = playerRB.velocity.y;
+
+            inputs.moveState = playerTransform.GetComponent<ServerPositionTracker>().CheckPlayerState(inputs.moveState);
 
             if(inputs.moveState == 0) //normal movement
             {
@@ -123,27 +119,21 @@ public class ServerPlayerManager : MonoBehaviour
                 playerRB.velocity = inputs.moveVector * horizontalWaterSpeed;
                 playerRB.velocity += yVel * Vector3.up;
             }
-
-        }
-        
-     
+        }     
     }
-
-
 }
 
 public class PlayerInputs
 {
     public Vector3 moveVector;
     public bool Jump;
-
     public float ClientTimeStamp;
     public float ServerTimeStamp;
 
     //0 is normal, 1 is water, 2 is lava
     public ushort moveState;
 
-    public PlayerInputs(Vector3 moveVec, bool jump)
+    public PlayerInputs(Vector3 moveVec, bool jump, float yRot)
     {
         moveVector = moveVec;
         Jump = jump;
