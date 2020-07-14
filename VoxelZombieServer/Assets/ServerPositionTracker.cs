@@ -39,9 +39,9 @@ public class ServerPositionTracker : MonoBehaviour
           if (Vector3.Distance(lastPosition, transform.position) > minMoveDelta)
             {
             //serverTimeDelta is the time between the last input being received and this position update occurring. 
-            float serverTimeDelta = Time.time - pManager.InputDictionary[ID].ServerTimeStamp;
+           // float serverTimeDelta = Time.time - pManager.InputDictionary[ID].ServerTimeStamp;
             vServer.SendPositionUpdate(ID, transform.position);
-            vServer.SendPositionUpdate(ID, transform.position, pManager.InputDictionary[ID].ClientTimeStamp, serverTimeDelta, rb.velocity);
+            //vServer.SendPositionUpdate(ID, transform.position, pManager.InputDictionary[ID].ClientTimeStamp, serverTimeDelta, rb.velocity);
             lastPosition = transform.position;
          }
 

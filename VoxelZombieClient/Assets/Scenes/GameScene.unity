@@ -666,6 +666,8 @@ MonoBehaviour:
     type: 3}
   LocalPlayerPrefab: {fileID: 6218928733261965679, guid: 0c98dbbf39b92e742b203e7cd3deca4e,
     type: 3}
+  LocalPlayerSimulator: {fileID: 3612919840746706134, guid: 3b2967383cc8c1b409593a2e2baaa9f0,
+    type: 3}
 --- !u!114 &250310965
 MonoBehaviour:
   m_ObjectHideFlags: 0

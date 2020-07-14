@@ -441,7 +441,7 @@ public class VoxelServer : MonoBehaviour
         }
     }
 
-    public void SendPositionUpdate(ushort id, Vector3 newPosition, float ClientTimeStamp, float ServerTimeDelta, Vector3 velocity)
+    public void SendPositionUpdate(ushort id, Vector3 newPosition, int ClientTickNumber, int ServerTickDelta, Vector3 velocity)
     { 
         using (DarkRiftWriter positionWriter = DarkRiftWriter.Create())
         {
@@ -451,8 +451,8 @@ public class VoxelServer : MonoBehaviour
             positionWriter.Write(newPosition.y);
             positionWriter.Write(newPosition.z);
 
-            positionWriter.Write(ClientTimeStamp);
-            positionWriter.Write(ServerTimeDelta);
+            positionWriter.Write(ClientTickNumber);
+            positionWriter.Write(ServerTickDelta);
 
             positionWriter.Write(velocity.x);
             positionWriter.Write(velocity.y);

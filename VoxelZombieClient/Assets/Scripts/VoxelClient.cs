@@ -31,9 +31,12 @@ namespace Client
 
         public GameObject NetworkPlayerPrefab;
         public GameObject LocalPlayerPrefab;
+        public GameObject LocalPlayerSimulator;
 
         Dictionary<ushort, Transform> NetworkPlayerDictionary = new Dictionary<ushort, Transform>();
         Transform localPlayerTransform;
+        Transform localSimTransform;
+
 
         ClientChatManager chatManager;
 
@@ -122,12 +125,12 @@ namespace Client
                     Vector3 serverPosition = new Vector3(reader.ReadSingle(), reader.ReadSingle(), reader.ReadSingle());
       
 
-                    float clientTimeStamp = reader.ReadSingle();
-                    float serverTimeDelta = reader.ReadSingle();
+                    int clientTickNumber = reader.ReadInt32();
+                    int serverTickDelta = reader.ReadInt32();
 
                     Vector3 velocity = new Vector3(reader.ReadSingle(), reader.ReadSingle(), reader.ReadSingle());
 
-                    localPlayerTransform.GetComponent<ClientPlayerController>().ClientPrediction(serverPosition, clientTimeStamp, serverTimeDelta, velocity);
+                    localSimTransform.GetComponent<ClientPlayerController>().ClientPrediction(serverPosition, clientTickNumber, serverTickDelta, velocity);
                 }
             }
         }
@@ -214,6 +217,11 @@ namespace Client
                             Debug.Log("Spawn Local Player");
                             GameObject LocalPlayer = GameObject.Instantiate(LocalPlayerPrefab,
                                          position, Quaternion.Euler(eulerRotation.x, eulerRotation.y, eulerRotation.z));
+
+                            GameObject LocalPlayerSim = GameObject.Instantiate(LocalPlayerSimulator,
+                                         position, Quaternion.Euler(eulerRotation.x, eulerRotation.y, eulerRotation.z));
+
+                            LocalPlayer.GetComponent<ClientCameraController>().LocalPlayerSim = LocalPlayerSim.transform;
                             if (StateTag == 0)
                             {
                                 LocalPlayer.GetComponent<MeshRenderer>().material.color = Color.white;
@@ -223,6 +231,7 @@ namespace Client
                                 LocalPlayer.GetComponent<MeshRenderer>().material.color = Color.red;
                             }
                             localPlayerTransform = LocalPlayer.transform;
+                            localSimTransform = LocalPlayerSim.transform;
                         }
                         else
                         {
@@ -316,9 +325,9 @@ namespace Client
 
         }
 
-        public void SendInputs(Vector3 moveVector, bool Jump, float timeStamp)
+        public void SendInputs(Vector3 moveVector, bool Jump, int tickNumber)
         {
-            Debug.Log("Sending Inputs");
+
             using (DarkRiftWriter InputWriter = DarkRiftWriter.Create())
             {
                 InputWriter.Write(moveVector.x);
@@ -327,7 +336,7 @@ namespace Client
 
                 InputWriter.Write(Jump);
 
-                InputWriter.Write(timeStamp);
+                InputWriter.Write(tickNumber);
 
                 using (Message InputMessage = Message.Create(Tags.INPUT_TAG, InputWriter))
                 {

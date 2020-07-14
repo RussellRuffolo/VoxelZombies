@@ -8,6 +8,7 @@ public class NameTagManager : MonoBehaviour
 
     public Text nameText;
     Transform localPlayer = null;
+    public Transform tagTransform;
     // Start is called before the first frame update
     void Start()
     {
@@ -18,7 +19,7 @@ public class NameTagManager : MonoBehaviour
     void Update()
     {
         if(localPlayer != null)
-            nameText.transform.LookAt(localPlayer);
+            tagTransform.transform.LookAt(localPlayer);
     }
 
     public void SetName(string name)
@@ -28,6 +29,6 @@ public class NameTagManager : MonoBehaviour
 
     public void SetPlayerTransform(Transform LocalPlayer)
     {
-
+        localPlayer = LocalPlayer;
     }
 }

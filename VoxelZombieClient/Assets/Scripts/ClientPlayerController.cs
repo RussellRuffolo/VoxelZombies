@@ -14,7 +14,6 @@ namespace Client
         public float verticalWaterSpeed;
         public float horizontalWaterSpeed;
 
-        Camera playerCam;
 
         public float minimumX = -60f;
         public float maximumX = 60f;
@@ -39,57 +38,69 @@ namespace Client
         HalfBlockDetector hbDetector;
         ClientPositionTracker pTracker;
 
-        List<ClientInputs> LoggedInputs = new List<ClientInputs>();
+        ClientInputs[] LoggedInputs = new ClientInputs[1024];
+        PlayerState[] LoggedStates = new PlayerState[1024];
+
+        private float timer = 0.0f;
+        private int tickNumber = 0;
+
+        public Rigidbody playerRB;
 
         private void Awake()
         {
+            playerRB = GetComponent<Rigidbody>();
             vClient = GameObject.FindGameObjectWithTag("Network").GetComponent<VoxelClient>();
             chatClient = GameObject.FindGameObjectWithTag("Network").GetComponent<ClientChatManager>();
             hbDetector = GetComponent<HalfBlockDetector>();
             pTracker = GetComponent<ClientPositionTracker>();
-            LoggedInputs.Add(new ClientInputs(Vector3.zero, false, 0));
-        }
-
-        // Start is called before the first frame update
-        void Start()
-        {
-
-            playerCam = GetComponentInChildren<Camera>();
-
-            Cursor.lockState = CursorLockMode.Locked;
-            Cursor.visible = false;
-            
+            //LoggedInputs.Add(new ClientInputs(Vector3.zero, false, 0));
+            //LoggedStates.Add(new PlayerState(transform.position, playerRB.velocity, 0));
+            playerRB = GetComponent<Rigidbody>();
         }
 
         // Update is called once per frame
         void Update()
         {
+            GetMouseRotation();
+            ClientInputs currentInputs = GetInputs();
 
-            CameraLook();
+            this.timer += Time.deltaTime;
+            while (this.timer >= Time.fixedDeltaTime)
+            {
+                this.timer -= Time.fixedDeltaTime;
 
-        }
+                int bufferIndex = tickNumber % 1024;
+                // LoggedStates[bufferIndex].position = transform.position;
+                //  LoggedStates[bufferIndex].velocity = playerRB.velocity;
+                //  LoggedStates[bufferIndex].Tick = tickNumber;
 
-        private void FixedUpdate()
-        {
-            
-            MovementInput();
-        }
+                LoggedStates[bufferIndex] = new PlayerState(transform.position, playerRB.velocity, tickNumber);
 
-        void CameraLook()
+                // LoggedInputs[bufferIndex].MoveVector = currentInputs.MoveVector;
+                // LoggedInputs[bufferIndex].Jump = currentInputs.Jump;
+                // LoggedInputs[bufferIndex].TickNumber = tickNumber;
+
+                LoggedInputs[bufferIndex] = new ClientInputs(currentInputs.MoveVector, currentInputs.Jump, tickNumber);
+
+
+                ApplyInputs(playerRB, currentInputs);
+                
+
+                Physics.Simulate(Time.fixedDeltaTime);
+
+                tickNumber++;
+            }
+
+        }   
+
+        void GetMouseRotation()
         {
             rotationY += Input.GetAxis("Mouse X") * sensitivityX;
-            rotationX += Input.GetAxis("Mouse Y") * sensitivityY;
-
-            rotationX = Mathf.Clamp(rotationX, minimumX, maximumX);
-
-
-            playerCam.transform.localEulerAngles = new Vector3(-rotationX, rotationY, 0);
             rotationTracker.transform.eulerAngles = new Vector3(0, rotationY, 0);
-           // transform.eulerAngles = new Vector3(0, rotationY, 0);
-
         }
 
-        void MovementInput()
+
+        ClientInputs GetInputs()
         {
 
             //Vector3 playerForward = new Vector3(transform.forward.x, 0, transform.forward.z);    
@@ -123,19 +134,39 @@ namespace Client
                 jump = false;
             }
 
+            int inputTickNumber = tickNumber;
+          
 
-            //run inputs here
-            Rigidbody playerRB = GetComponent<Rigidbody>();            
+            //if inputs have changed send the updated values to the server           
+            if (speedVector != lastMoveVector || jump != lastJump)
+            {             
+                vClient.SendInputs(speedVector, jump, inputTickNumber);              
+                lastMoveVector = speedVector;
+                lastJump = jump;
+            }
+
+
+            ClientInputs currentInputs = new ClientInputs(speedVector, jump, inputTickNumber);
+            return currentInputs;
+
+             
+          
+        }
+
+        public void ApplyInputs(Rigidbody playerRB, ClientInputs currentInputs)
+        {
+            //run inputs here        
 
             float yVel = playerRB.velocity.y;
             moveState = pTracker.CheckPlayerState(moveState);
             if (moveState == 0) //normal movement
             {
-                bool onGround = hbDetector.CheckGrounded();
+                bool onGround = hbDetector.grounded;
 
                 if (onGround)
                 {
-                    if (jump)
+
+                    if (currentInputs.Jump)
                     {
                         yVel = jumpSpeed;
                     }
@@ -146,15 +177,13 @@ namespace Client
                     yVel -= gravAcceleration * Time.deltaTime;
                 }
 
-                playerRB.velocity = speedVector * playerSpeed;
+                playerRB.velocity = currentInputs.MoveVector * playerSpeed;
                 playerRB.velocity += yVel * Vector3.up;
-
-               
 
             }
             else if (moveState == 1) //water movement
             {
-                if (jump)
+                if (currentInputs.Jump)
                 {
                     yVel = verticalWaterSpeed;
                 }
@@ -163,161 +192,133 @@ namespace Client
                     yVel = -verticalWaterSpeed;
                 }
 
-                playerRB.velocity = speedVector * horizontalWaterSpeed;
+                playerRB.velocity = currentInputs.MoveVector * horizontalWaterSpeed;
                 playerRB.velocity += yVel * Vector3.up;
             }
 
-
-
-            //if inputs have changed send the updated values to the server           
-             if (speedVector != lastMoveVector || jump != lastJump)
-             {
-                float inputTimeStamp = Time.time;
-                vClient.SendInputs(speedVector, jump, inputTimeStamp);
-                LoggedInputs.Add(new ClientInputs(speedVector, jump, inputTimeStamp));
-                lastMoveVector = speedVector;
-                lastJump = jump;
-             }
-
-            if (Input.GetKeyDown(KeyCode.Escape))
-            {
-                Cursor.lockState = CursorLockMode.None;
-            }
-            if (Input.GetKeyDown(KeyCode.Mouse0))
-            {
-                Cursor.lockState = CursorLockMode.Locked;
-                Cursor.visible = false;
-            }
-
-            
         }
 
-        public void ClientPrediction(Vector3 serverPosition, float ClientTimeStamp, float ServerTimeDelta, Vector3 velocity)
+        public void ClientPrediction(Vector3 serverPosition, int ClientTickNumber, int ServerTickDelta, Vector3 serverVelocity)
         {
-            
-            Vector3 currentPosition = transform.position;
+            //check error between position/velocity at the tick supplied
+            int bufferIndex = (ClientTickNumber + ServerTickDelta) % 1024;
+            if(LoggedStates[bufferIndex] == null)
+            {          
+                LoggedStates[bufferIndex] = new PlayerState(serverPosition, serverVelocity, ClientTickNumber + ServerTickDelta);
+            }
 
-            ClientInputs currentInputs = GetCurrentInputs(ClientTimeStamp);
+            Vector3 positionError = LoggedStates[bufferIndex].position - serverPosition;
 
-            float simulTime = ClientTimeStamp + ServerTimeDelta;
-
-            Rigidbody playerRB = GetComponent<Rigidbody>();
-            playerRB.velocity = velocity;
-
-            //begin the prediction from the server position
-            transform.position = serverPosition;
-
-            ushort simulMoveState = moveState;
-
-            Physics.autoSimulation = false;
-
-            Debug.Log("The number of simulation steps is: " + (Time.time - simulTime) / Time.fixedDeltaTime);
-            while (simulTime < Time.time)
+            if (positionError.sqrMagnitude > 0.00001f)
             {
-                float yVel = playerRB.velocity.y;
-                simulMoveState = pTracker.CheckPlayerState(simulMoveState);
+                // Debug.Log("Found positon error with sqr magnitude: " + positionError.sqrMagnitude + " and " + (tickNumber - (ClientTickNumber + ServerTickDelta)) + " ticks ago");
 
-                //need to calculate new movestate for each simul tick
-                if (simulMoveState == 0) //normal movement
+                //rewind to the given tick and replay to current tick
+                transform.position = serverPosition;
+                playerRB.velocity = serverVelocity;
+
+                ushort simulMoveState = moveState;
+
+                int rewindTickNumber = ClientTickNumber + ServerTickDelta;
+                while (rewindTickNumber < this.tickNumber)
                 {
-                    bool onGround = hbDetector.CheckGrounded();
+                    bufferIndex = rewindTickNumber % 1024;
+                    ClientInputs currentInputs = LoggedInputs[bufferIndex];
 
-                    if (onGround)
+                    float yVel = playerRB.velocity.y;
+
+                    simulMoveState = pTracker.CheckPlayerState(simulMoveState);
+
+                    if (simulMoveState == 0) //normal movement
+                    {
+                        bool onGround = hbDetector.grounded;
+
+                        if (onGround)
+                        {
+                            if (currentInputs.Jump)
+                            {
+                                yVel = jumpSpeed;
+                            }
+
+                        }
+                        else
+                        {
+                            yVel -= gravAcceleration * Time.fixedDeltaTime;
+                        }
+
+                        playerRB.velocity = currentInputs.MoveVector * playerSpeed;
+                        playerRB.velocity += yVel * Vector3.up;
+
+                    }
+                    else if (moveState == 1) //water movement
                     {
                         if (currentInputs.Jump)
                         {
-                            yVel = jumpSpeed;
+                            yVel = verticalWaterSpeed;
+                        }
+                        else
+                        {
+                            yVel = -verticalWaterSpeed;
                         }
 
-                    }
-                    else
-                    {
-                        yVel -= gravAcceleration * Time.fixedDeltaTime;
+                        playerRB.velocity = currentInputs.MoveVector * horizontalWaterSpeed;
+                        playerRB.velocity += yVel * Vector3.up;
                     }
 
-                    playerRB.velocity = currentInputs.MoveVector * playerSpeed;
-                    playerRB.velocity += yVel * Vector3.up;
+                    LoggedStates[rewindTickNumber % 1024] = new PlayerState(transform.position, playerRB.velocity, rewindTickNumber);
 
 
-                }
-                else if (moveState == 1) //water movement
-                {
-                    if (currentInputs.Jump)
-                    {
-                        yVel = verticalWaterSpeed;
-                    }
-                    else
-                    {
-                        yVel = -verticalWaterSpeed;
-                    }
-
-                    playerRB.velocity = currentInputs.MoveVector * horizontalWaterSpeed;
-                    playerRB.velocity += yVel * Vector3.up;
-                }
-
-                if (Time.time - simulTime < Time.fixedDeltaTime)
-                {
-                    Physics.Simulate(Time.time - simulTime);
-                    simulTime += Time.time - simulTime;
-                }
-                else
-                {
                     Physics.Simulate(Time.fixedDeltaTime);
-                    simulTime += Time.fixedDeltaTime;
+
+                    rewindTickNumber++;
+
                 }
-             
-              
-                currentInputs = GetCurrentInputs(simulTime);
             }
-            Physics.autoSimulation = true;
-
-            if(Vector3.Distance(currentPosition, transform.position) > .01f)
-            {
-               Debug.Log("Found error: " + Vector3.Distance(currentPosition, transform.position));
-             
-            }
-            
-            //This ignores the prediction, used for testing
-           // transform.position = currentPosition;
-
         }
-
-        public ClientInputs GetCurrentInputs(float OldestTimeStamp)
-        {
-            ClientInputs currentInput = new ClientInputs(Vector3.zero,false,0);
-            int removeCount = 0;
-
-            for(int i = 0; i < LoggedInputs.Count; i++)
-            {
-                if(LoggedInputs[i].TimeStamp < OldestTimeStamp)
-                {
-                    currentInput = LoggedInputs[i];
-                    removeCount++;
-                }
-                else
-                {
-                    break;
-                }
-
-            }
-
-            LoggedInputs.RemoveRange(0, removeCount);
-
-            return currentInput;
-        }
+        
+        
     }
 
     public class ClientInputs
     {
         public Vector3 MoveVector;
         public bool Jump;
-        public float TimeStamp;
+        public int TickNumber;
 
-        public ClientInputs(Vector3 moveVector, bool jump, float timeStamp)
+        public ClientInputs()
+        {
+            MoveVector = Vector3.zero;
+            Jump = false;
+            TickNumber = 0;
+        }
+
+        public ClientInputs(Vector3 moveVector, bool jump, int tickNumber)
         {
             MoveVector = moveVector;
             Jump = jump;
-            TimeStamp = timeStamp;
+            TickNumber = tickNumber;
+        }
+    }
+
+    public class PlayerState
+    {
+        public Vector3 position;
+        public Vector3 velocity;
+        public int Tick;    
+
+        public PlayerState()
+        {
+            position = Vector3.zero;
+            velocity = Vector3.zero;
+            Tick = 0;
+        }
+
+
+        public PlayerState(Vector3 pos, Vector3 vel, int tick)
+        {
+            position = pos;
+            velocity = vel;
+            Tick = tick;
         }
     }
 

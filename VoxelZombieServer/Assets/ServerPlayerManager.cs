@@ -18,6 +18,15 @@ public class ServerPlayerManager : MonoBehaviour
     public float horizontalWaterSpeed;
     public float verticalWaterSpeed;
 
+    private int serverTickNumber = 0;
+
+    VoxelServer vServer;
+
+    private void Awake()
+    {
+        vServer = GetComponent<VoxelServer>();
+    }
+
     public void AddPlayer(ushort PlayerID, ushort stateTag, int xPos, int yPos, int zPos)
     {
         Vector3 spawnPosition = new Vector3((float)xPos, (float)yPos, (float)zPos);
@@ -27,6 +36,8 @@ public class ServerPlayerManager : MonoBehaviour
         newPlayer.GetComponent<ServerPositionTracker>().stateTag = stateTag;
         PlayerDictionary.Add(PlayerID, newPlayer.transform);
         InputDictionary.Add(PlayerID, new PlayerInputs(Vector3.zero, false, 0));
+
+        
     }
 
     public void RemovePlayer(ushort PlayerID)
@@ -47,19 +58,22 @@ public class ServerPlayerManager : MonoBehaviour
 
             //possibly only need to send x and z, examine later.
             Vector3 moveVector = new Vector3(reader.ReadSingle(), reader.ReadSingle(), reader.ReadSingle());
-            Debug.Log("Move vector is: " + moveVector.x + " " + moveVector.y + " " + moveVector.z);
+
             bool Jump = reader.ReadBoolean();
+            if(Jump)
+            {
+                Debug.Log("Jump!");
+            }
 
-
-            float timeStamp = reader.ReadSingle();
+            int clientTickNum = reader.ReadInt32();
 
             InputDictionary[clientID].moveVector = moveVector;
        
             InputDictionary[clientID].Jump = Jump;
 
-            InputDictionary[clientID].ClientTimeStamp = timeStamp;
+            InputDictionary[clientID].ClientTickNumber = clientTickNum;
 
-            InputDictionary[clientID].ServerTimeStamp = Time.time;
+            InputDictionary[clientID].ServerTickNumber = 0;
             
         }
     }
@@ -67,30 +81,36 @@ public class ServerPlayerManager : MonoBehaviour
     private void FixedUpdate()
     {
         RunInputs();
+      
     }
 
     private void RunInputs()
     {
-
+        //apply forces based on inputs
         foreach(ushort id in PlayerDictionary.Keys)
         {
             Transform playerTransform = PlayerDictionary[id];
             Rigidbody playerRB = playerTransform.GetComponent<Rigidbody>();
 
             PlayerInputs inputs = InputDictionary[id];
-
+            if(inputs.ServerTickNumber == 0)
+            {
+                inputs.ServerTickNumber = serverTickNumber;
+            }
             float yVel = playerRB.velocity.y;
 
             inputs.moveState = playerTransform.GetComponent<ServerPositionTracker>().CheckPlayerState(inputs.moveState);
 
             if(inputs.moveState == 0) //normal movement
             {
-                bool onGround = playerTransform.GetComponent<HalfBlockDetector>().CheckGrounded();
+                bool onGround = playerTransform.GetComponent<HalfBlockDetector>().grounded;
            
                 if (onGround)
                 {
+                    Debug.Log("On Ground");
                     if (inputs.Jump)
                     {
+                        Debug.Log("Jump");
                         yVel = JumpSpeed;
                     }
 
@@ -119,7 +139,20 @@ public class ServerPlayerManager : MonoBehaviour
                 playerRB.velocity = inputs.moveVector * horizontalWaterSpeed;
                 playerRB.velocity += yVel * Vector3.up;
             }
-        }     
+        }
+
+        //run simulation for 1 tick
+        Physics.Simulate(Time.fixedDeltaTime);
+        serverTickNumber++;
+        //send updated states to clients
+        foreach (ushort id in PlayerDictionary.Keys)
+        {
+            int serverTickDelta = serverTickNumber - InputDictionary[id].ServerTickNumber;
+            Vector3 playerVelocity = PlayerDictionary[id].GetComponent<Rigidbody>().velocity;
+            vServer.SendPositionUpdate(id, PlayerDictionary[id].position, InputDictionary[id].ClientTickNumber, serverTickDelta, playerVelocity);
+        }
+
+
     }
 }
 
@@ -127,8 +160,8 @@ public class PlayerInputs
 {
     public Vector3 moveVector;
     public bool Jump;
-    public float ClientTimeStamp;
-    public float ServerTimeStamp;
+    public int ClientTickNumber;
+    public int ServerTickNumber;
 
     //0 is normal, 1 is water, 2 is lava
     public ushort moveState;
@@ -138,7 +171,7 @@ public class PlayerInputs
         moveVector = moveVec;
         Jump = jump;
         moveState = 0;
-        ClientTimeStamp = 0;
-        ServerTimeStamp = 0;
+        ClientTickNumber = 0;
+        ServerTickNumber = 0;
     }
 }

@@ -133,7 +133,7 @@ namespace Client
 
                     if (currentWorld[x, y, z] == 0)
                     {
-                        Debug.Log("Error, no block there");
+                       // Debug.Log("Error, no block there");
                         return;
                     }
 
@@ -221,7 +221,7 @@ namespace Client
                 {
                     return;
                 }
-                Debug.Log("Break;");
+
                 vClient.SendBlockEdit((ushort)x, (ushort)y, (ushort)z, 0);
                 return;
             }

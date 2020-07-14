@@ -68,7 +68,7 @@ public class HalfBlockDetector : MonoBehaviour
     }
 
     public bool CheckGrounded()
-    {
+    {        
         bool found = false;
         foreach (ContactPoint cp in allCPs)
         {

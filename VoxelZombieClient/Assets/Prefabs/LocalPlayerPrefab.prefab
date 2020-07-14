@@ -1,35 +1,5 @@
 %YAML 1.1
 %TAG !u! tag:unity3d.com,2011:
---- !u!1 &867163856051556021
-GameObject:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  serializedVersion: 6
-  m_Component:
-  - component: {fileID: 488788605766833258}
-  m_Layer: 0
-  m_Name: RotationTracker
-  m_TagString: Untagged
-  m_Icon: {fileID: 0}
-  m_NavMeshLayer: 0
-  m_StaticEditorFlags: 0
-  m_IsActive: 1
---- !u!4 &488788605766833258
-Transform:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 867163856051556021}
-  m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
-  m_LocalPosition: {x: 0, y: 0, z: 0}
-  m_LocalScale: {x: 1, y: 1, z: 1}
-  m_Children: []
-  m_Father: {fileID: 3196143941118279235}
-  m_RootOrder: 1
-  m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
 --- !u!1 &6218928733261965679
 GameObject:
   m_ObjectHideFlags: 0
@@ -41,13 +11,11 @@ GameObject:
   - component: {fileID: 3196143941118279235}
   - component: {fileID: 5709435662946779147}
   - component: {fileID: 6522546560950214545}
-  - component: {fileID: 2627297862895712807}
   - component: {fileID: -3559996018904387548}
   - component: {fileID: -1066980457660310490}
   - component: {fileID: 3435054098065345402}
   - component: {fileID: -664284468489102134}
-  - component: {fileID: 4984176997551188338}
-  - component: {fileID: 478303800803747943}
+  - component: {fileID: 2305748441030977254}
   m_Layer: 0
   m_Name: LocalPlayerPrefab
   m_TagString: Player
@@ -67,7 +35,6 @@ Transform:
   m_LocalScale: {x: 1, y: 1, z: 1}
   m_Children:
   - {fileID: 8676816057336953763}
-  - {fileID: 488788605766833258}
   m_Father: {fileID: 0}
   m_RootOrder: 0
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
@@ -117,31 +84,6 @@ MeshRenderer:
   m_SortingLayerID: 0
   m_SortingLayer: 0
   m_SortingOrder: 0
---- !u!114 &2627297862895712807
-MonoBehaviour:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 6218928733261965679}
-  m_Enabled: 1
-  m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: e8a1f880585be3446881a7d4c26e90bb, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: 
-  rotationTracker: {fileID: 867163856051556021}
-  playerSpeed: 5
-  jumpSpeed: 7
-  gravAcceleration: 20
-  verticalWaterSpeed: 1.5
-  horizontalWaterSpeed: 1.5
-  minimumX: -90
-  maximumX: 90
-  minimumY: -360
-  maximumY: 360
-  sensitivityX: 5
-  sensitivityY: 5
-  moveState: 0
 --- !u!114 &-3559996018904387548
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -284,7 +226,7 @@ MonoBehaviour:
   maxStepHeight: 0.55
   stepSearchOvershoot: 0.01
   grounded: 0
---- !u!114 &4984176997551188338
+--- !u!114 &2305748441030977254
 MonoBehaviour:
   m_ObjectHideFlags: 0
   m_CorrespondingSourceObject: {fileID: 0}
@@ -293,22 +235,9 @@ MonoBehaviour:
   m_GameObject: {fileID: 6218928733261965679}
   m_Enabled: 1
   m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: 8700c219a17e1f54b9f4848ce48f39f1, type: 3}
+  m_Script: {fileID: 11500000, guid: 27509fcd101e49c468aa2ca8d71e9a8c, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
---- !u!65 &478303800803747943
-BoxCollider:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 6218928733261965679}
-  m_Material: {fileID: 0}
-  m_IsTrigger: 0
-  m_Enabled: 1
-  serializedVersion: 2
-  m_Size: {x: 0.708, y: 1.8, z: 0.708}
-  m_Center: {x: 0, y: -0.1, z: 0}
 --- !u!1 &7198119557326670883
 GameObject:
   m_ObjectHideFlags: 0
