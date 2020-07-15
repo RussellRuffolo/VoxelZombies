@@ -50,19 +50,17 @@ public class ClientCameraController : MonoBehaviour
     private void LateUpdate()
     {
         float clientError = Vector3.Distance(transform.position, LocalPlayerSim.position);
-        if(clientError > 2)
+        if(clientError > 2 || clientError < 0.01f)
         {
             Debug.Log("Error of magnitude: " + clientError);
-        }
-        else if(clientError < 0.01f)
-        {
-            transform.position = LocalPlayerSim.position;
+            transform.position = LocalPlayerSim.position;    
+         
         }
         else
         {
             transform.position = Vector3.Lerp(transform.position, LocalPlayerSim.position, .1f);
         }
-        transform.position = LocalPlayerSim.position;
+     
     }
 
     void CameraLook()
