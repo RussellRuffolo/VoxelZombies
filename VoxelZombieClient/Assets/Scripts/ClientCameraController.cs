@@ -51,7 +51,7 @@ public class ClientCameraController : MonoBehaviour
     {
         
         float clientError = Vector3.Distance(transform.position, LocalPlayerSim.position);
-        if(clientError > 2 || clientError < 0.05f)
+        if(clientError > 2 || clientError < 0.2f)
         {
 
             transform.position = LocalPlayerSim.position;    
