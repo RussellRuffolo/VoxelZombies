@@ -452,7 +452,8 @@ public class VoxelServer : MonoBehaviour
             positionWriter.Write(newPosition.z);
 
             positionWriter.Write(ClientTickNumber);
-            positionWriter.Write(ServerTickDelta);
+            //+ 1 is test
+            positionWriter.Write(ServerTickDelta + 1);
 
             positionWriter.Write(velocity.x);
             positionWriter.Write(velocity.y);

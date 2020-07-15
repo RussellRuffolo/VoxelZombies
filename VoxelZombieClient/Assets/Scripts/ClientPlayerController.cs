@@ -174,7 +174,7 @@ namespace Client
                 }
                 else
                 {
-                    yVel -= gravAcceleration * Time.deltaTime;
+                    yVel -= gravAcceleration * Time.fixedDeltaTime;
                 }
 
                 playerRB.velocity = currentInputs.MoveVector * playerSpeed;
@@ -209,9 +209,9 @@ namespace Client
 
             Vector3 positionError = LoggedStates[bufferIndex].position - serverPosition;
 
-            if (positionError.sqrMagnitude > 0.00001f)
+            if (positionError.sqrMagnitude > 0.01f)
             {
-                // Debug.Log("Found positon error with sqr magnitude: " + positionError.sqrMagnitude + " and " + (tickNumber - (ClientTickNumber + ServerTickDelta)) + " ticks ago");
+                 Debug.Log("Found positon error with sqr magnitude: " + positionError.sqrMagnitude + " and " + (tickNumber - (ClientTickNumber + ServerTickDelta)) + " ticks ago");
 
                 //rewind to the given tick and replay to current tick
                 transform.position = serverPosition;

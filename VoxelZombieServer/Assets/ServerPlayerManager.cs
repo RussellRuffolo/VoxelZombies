@@ -60,16 +60,15 @@ public class ServerPlayerManager : MonoBehaviour
             Vector3 moveVector = new Vector3(reader.ReadSingle(), reader.ReadSingle(), reader.ReadSingle());
 
             bool Jump = reader.ReadBoolean();
-            if(Jump)
-            {
-                Debug.Log("Jump!");
-            }
+      
 
             int clientTickNum = reader.ReadInt32();
 
             InputDictionary[clientID].moveVector = moveVector;
        
             InputDictionary[clientID].Jump = Jump;
+
+       
 
             InputDictionary[clientID].ClientTickNumber = clientTickNum;
 
@@ -93,6 +92,7 @@ public class ServerPlayerManager : MonoBehaviour
             Rigidbody playerRB = playerTransform.GetComponent<Rigidbody>();
 
             PlayerInputs inputs = InputDictionary[id];
+            
             if(inputs.ServerTickNumber == 0)
             {
                 inputs.ServerTickNumber = serverTickNumber;
@@ -107,17 +107,17 @@ public class ServerPlayerManager : MonoBehaviour
            
                 if (onGround)
                 {
-                    Debug.Log("On Ground");
+
                     if (inputs.Jump)
                     {
-                        Debug.Log("Jump");
+                       
                         yVel = JumpSpeed;
                     }
 
                 }
                 else
                 {
-                    yVel -= gravAcceleration * Time.deltaTime;
+                    yVel -= gravAcceleration * Time.fixedDeltaTime;
                 }
 
                 playerRB.velocity = inputs.moveVector * PlayerSpeed;
@@ -173,5 +173,6 @@ public class PlayerInputs
         moveState = 0;
         ClientTickNumber = 0;
         ServerTickNumber = 0;
+
     }
 }

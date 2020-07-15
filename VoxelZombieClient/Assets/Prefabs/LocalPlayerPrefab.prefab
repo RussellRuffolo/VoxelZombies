@@ -238,6 +238,13 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 27509fcd101e49c468aa2ca8d71e9a8c, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
+  LocalPlayerSim: {fileID: 0}
+  minimumX: -60
+  maximumX: 60
+  minimumY: -360
+  maximumY: 360
+  sensitivityX: 5
+  sensitivityY: 5
 --- !u!1 &7198119557326670883
 GameObject:
   m_ObjectHideFlags: 0
