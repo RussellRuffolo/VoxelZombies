@@ -102,7 +102,7 @@ public class VoxelServer : MonoBehaviour
         {
            if(e.Tag == INPUT_TAG)
            {
-                PlayerManager.ApplyInput(e);
+                PlayerManager.ReceiveInputs(e);
            }
            else if(e.Tag == BLOCK_EDIT_TAG)
            {
@@ -441,7 +441,7 @@ public class VoxelServer : MonoBehaviour
         }
     }
 
-    public void SendPositionUpdate(ushort id, Vector3 newPosition, int ClientTickNumber, int ServerTickDelta, Vector3 velocity)
+    public void SendPositionUpdate(ushort id, Vector3 newPosition, int ClientTickNumber, Vector3 velocity)
     { 
         using (DarkRiftWriter positionWriter = DarkRiftWriter.Create())
         {
@@ -451,9 +451,7 @@ public class VoxelServer : MonoBehaviour
             positionWriter.Write(newPosition.y);
             positionWriter.Write(newPosition.z);
 
-            positionWriter.Write(ClientTickNumber);
-            //+ 1 is test
-            positionWriter.Write(ServerTickDelta + 1);
+            positionWriter.Write(ClientTickNumber);               
 
             positionWriter.Write(velocity.x);
             positionWriter.Write(velocity.y);

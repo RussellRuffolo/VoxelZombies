@@ -1,5 +1,8 @@
 ﻿using System.Collections;
 using System.Collections.Generic;
+using DarkRift;
+using DarkRift.Client.Unity;
+using DarkRift.Client;
 using UnityEngine;
 
 namespace Client
@@ -41,6 +44,9 @@ namespace Client
         ClientInputs[] LoggedInputs = new ClientInputs[1024];
         PlayerState[] LoggedStates = new PlayerState[1024];
 
+        List<ClientInputs> UnconfirmedInputs = new List<ClientInputs>();
+        private int lastReceivedStateTick = 0;
+
         private float timer = 0.0f;
         private int tickNumber = 0;
 
@@ -52,9 +58,7 @@ namespace Client
             vClient = GameObject.FindGameObjectWithTag("Network").GetComponent<VoxelClient>();
             chatClient = GameObject.FindGameObjectWithTag("Network").GetComponent<ClientChatManager>();
             hbDetector = GetComponent<HalfBlockDetector>();
-            pTracker = GetComponent<ClientPositionTracker>();
-            //LoggedInputs.Add(new ClientInputs(Vector3.zero, false, 0));
-            //LoggedStates.Add(new PlayerState(transform.position, playerRB.velocity, 0));
+            pTracker = GetComponent<ClientPositionTracker>();    
             playerRB = GetComponent<Rigidbody>();
         }
 
@@ -70,15 +74,8 @@ namespace Client
                 this.timer -= Time.fixedDeltaTime;
 
                 int bufferIndex = tickNumber % 1024;
-                // LoggedStates[bufferIndex].position = transform.position;
-                //  LoggedStates[bufferIndex].velocity = playerRB.velocity;
-                //  LoggedStates[bufferIndex].Tick = tickNumber;
 
                 LoggedStates[bufferIndex] = new PlayerState(transform.position, playerRB.velocity, tickNumber);
-
-                // LoggedInputs[bufferIndex].MoveVector = currentInputs.MoveVector;
-                // LoggedInputs[bufferIndex].Jump = currentInputs.Jump;
-                // LoggedInputs[bufferIndex].TickNumber = tickNumber;
 
                 LoggedInputs[bufferIndex] = new ClientInputs(currentInputs.MoveVector, currentInputs.Jump, tickNumber);
 
@@ -91,14 +88,53 @@ namespace Client
                 tickNumber++;
             }
 
+            SendInputs();
         }   
+
+        void SendInputs()
+        {
+            UnconfirmedInputs.Clear();
+
+            int index = lastReceivedStateTick % 1024;
+            if(lastReceivedStateTick < tickNumber - 1)
+            {          
+                int numInputs = (tickNumber - 1) - lastReceivedStateTick;
+                //Debug.Log("Num inputs: " + numInputs);
+                using (DarkRiftWriter InputWriter = DarkRiftWriter.Create())
+                {
+                    InputWriter.Write(numInputs);
+                    for (int i = index; i < index + numInputs; i++)
+                    {
+                        InputWriter.Write(LoggedInputs[i % 1024].MoveVector.x);
+                        InputWriter.Write(LoggedInputs[i % 1024].MoveVector.y);
+                        InputWriter.Write(LoggedInputs[i % 1024].MoveVector.z);
+
+                        InputWriter.Write(LoggedInputs[i % 1024].Jump);
+
+                        InputWriter.Write(LoggedInputs[i % 1024].TickNumber);
+                    }
+
+                    using (Message InputMessage = Message.Create(Tags.INPUT_TAG, InputWriter))
+                    {
+                        vClient.Client.SendMessage(InputMessage, SendMode.Unreliable);
+                    }
+
+                }
+
+            }
+            else
+            {
+                Debug.LogError("Error, received state in the future");
+            }
+         
+        
+        }
 
         void GetMouseRotation()
         {
             rotationY += Input.GetAxis("Mouse X") * sensitivityX;
             rotationTracker.transform.eulerAngles = new Vector3(0, rotationY, 0);
         }
-
 
         ClientInputs GetInputs()
         {
@@ -135,16 +171,6 @@ namespace Client
             }
 
             int inputTickNumber = tickNumber;
-          
-
-            //if inputs have changed send the updated values to the server           
-            if (speedVector != lastMoveVector || jump != lastJump)
-            {             
-                vClient.SendInputs(speedVector, jump, inputTickNumber);              
-                lastMoveVector = speedVector;
-                lastJump = jump;
-            }
-
 
             ClientInputs currentInputs = new ClientInputs(speedVector, jump, inputTickNumber);
             return currentInputs;
@@ -161,7 +187,7 @@ namespace Client
             moveState = pTracker.CheckPlayerState(moveState);
             if (moveState == 0) //normal movement
             {
-                bool onGround = hbDetector.grounded;
+                bool onGround = hbDetector.CheckGrounded();
 
                 if (onGround)
                 {
@@ -198,20 +224,22 @@ namespace Client
 
         }
 
-        public void ClientPrediction(Vector3 serverPosition, int ClientTickNumber, int ServerTickDelta, Vector3 serverVelocity)
+        public void ClientPrediction(Vector3 serverPosition, int ClientTickNumber, Vector3 serverVelocity)
         {
+            lastReceivedStateTick = ClientTickNumber;
+           
             //check error between position/velocity at the tick supplied
-            int bufferIndex = (ClientTickNumber + ServerTickDelta) % 1024;
+            int bufferIndex = (ClientTickNumber) % 1024;
             if(LoggedStates[bufferIndex] == null)
             {          
-                LoggedStates[bufferIndex] = new PlayerState(serverPosition, serverVelocity, ClientTickNumber + ServerTickDelta);
+                LoggedStates[bufferIndex] = new PlayerState(serverPosition, serverVelocity, ClientTickNumber);
             }
 
             Vector3 positionError = LoggedStates[bufferIndex].position - serverPosition;
 
-            if (positionError.sqrMagnitude > 0.01f)
+            if (positionError.sqrMagnitude > 0.001f)
             {
-                 Debug.Log("Found positon error with sqr magnitude: " + positionError.sqrMagnitude + " and " + (tickNumber - (ClientTickNumber + ServerTickDelta)) + " ticks ago");
+                 Debug.Log("Found positon error with sqr magnitude: " + positionError.sqrMagnitude + " and " + (tickNumber - (ClientTickNumber)) + " ticks ago");
 
                 //rewind to the given tick and replay to current tick
                 transform.position = serverPosition;
@@ -219,54 +247,15 @@ namespace Client
 
                 ushort simulMoveState = moveState;
 
-                int rewindTickNumber = ClientTickNumber + ServerTickDelta;
+                int rewindTickNumber = ClientTickNumber;
                 while (rewindTickNumber < this.tickNumber)
                 {
                     bufferIndex = rewindTickNumber % 1024;
                     ClientInputs currentInputs = LoggedInputs[bufferIndex];
 
-                    float yVel = playerRB.velocity.y;
-
-                    simulMoveState = pTracker.CheckPlayerState(simulMoveState);
-
-                    if (simulMoveState == 0) //normal movement
-                    {
-                        bool onGround = hbDetector.grounded;
-
-                        if (onGround)
-                        {
-                            if (currentInputs.Jump)
-                            {
-                                yVel = jumpSpeed;
-                            }
-
-                        }
-                        else
-                        {
-                            yVel -= gravAcceleration * Time.fixedDeltaTime;
-                        }
-
-                        playerRB.velocity = currentInputs.MoveVector * playerSpeed;
-                        playerRB.velocity += yVel * Vector3.up;
-
-                    }
-                    else if (moveState == 1) //water movement
-                    {
-                        if (currentInputs.Jump)
-                        {
-                            yVel = verticalWaterSpeed;
-                        }
-                        else
-                        {
-                            yVel = -verticalWaterSpeed;
-                        }
-
-                        playerRB.velocity = currentInputs.MoveVector * horizontalWaterSpeed;
-                        playerRB.velocity += yVel * Vector3.up;
-                    }
-
+                    ApplyInputs(playerRB, currentInputs);
+                
                     LoggedStates[rewindTickNumber % 1024] = new PlayerState(transform.position, playerRB.velocity, rewindTickNumber);
-
 
                     Physics.Simulate(Time.fixedDeltaTime);
 

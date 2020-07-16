@@ -24,7 +24,7 @@ namespace Client
         */
         public bool loadedFirstMap = false;
 
-        UnityClient Client;
+        public UnityClient Client;
 
         ClientVoxelEngine vEngine;
         private World world;
@@ -125,12 +125,11 @@ namespace Client
                     Vector3 serverPosition = new Vector3(reader.ReadSingle(), reader.ReadSingle(), reader.ReadSingle());
       
 
-                    int clientTickNumber = reader.ReadInt32();
-                    int serverTickDelta = reader.ReadInt32();
+                    int clientTickNumber = reader.ReadInt32();                 
 
                     Vector3 velocity = new Vector3(reader.ReadSingle(), reader.ReadSingle(), reader.ReadSingle());
 
-                    localSimTransform.GetComponent<ClientPlayerController>().ClientPrediction(serverPosition, clientTickNumber, serverTickDelta, velocity);
+                    localSimTransform.GetComponent<ClientPlayerController>().ClientPrediction(serverPosition, clientTickNumber, velocity);
                 }
             }
         }
@@ -325,22 +324,25 @@ namespace Client
 
         }
 
-        public void SendInputs(Vector3 moveVector, bool Jump, int tickNumber)
+        public void SendInputs(ClientInputs[] inputsArray)
         {
-
+            int numInputs = inputsArray.Length;
             using (DarkRiftWriter InputWriter = DarkRiftWriter.Create())
             {
-                InputWriter.Write(moveVector.x);
-                InputWriter.Write(moveVector.y);
-                InputWriter.Write(moveVector.z);
+                for(int i = 0; i < numInputs; i++)
+                {
+                    InputWriter.Write(inputsArray[i].MoveVector.x);
+                    InputWriter.Write(inputsArray[i].MoveVector.y);
+                    InputWriter.Write(inputsArray[i].MoveVector.z);
 
-                InputWriter.Write(Jump);
+                    InputWriter.Write(inputsArray[i].Jump);
 
-                InputWriter.Write(tickNumber);
+                    InputWriter.Write(inputsArray[i].TickNumber);
+                }          
 
                 using (Message InputMessage = Message.Create(Tags.INPUT_TAG, InputWriter))
                 {
-                    Client.SendMessage(InputMessage, SendMode.Reliable);
+                    Client.SendMessage(InputMessage, SendMode.Unreliable);
                 }
 
             }
