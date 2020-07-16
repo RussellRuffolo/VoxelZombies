@@ -25,6 +25,7 @@ public class HalfBlockDetector : MonoBehaviour
 
     void FixedUpdate()
     {
+        /*
         Vector3 velocity = this.GetComponent<Rigidbody>().velocity;
 
         if (!steppingUp)
@@ -62,6 +63,51 @@ public class HalfBlockDetector : MonoBehaviour
 
         }
        
+        allCPs.Clear();
+        lastVelocity = velocity;
+        */
+
+    }
+
+    public void CheckSteps()
+    {
+        Vector3 velocity = this.GetComponent<Rigidbody>().velocity;
+
+        if (!steppingUp)
+        {
+            //Filter through the ContactPoints to see if we're grounded and to see if we can step up
+            ContactPoint groundCP = default(ContactPoint);
+            grounded = FindGround(out groundCP, allCPs);
+
+            Vector3 stepUpOffset = default(Vector3);
+            bool stepUp = false;
+            if (grounded)
+                stepUp = FindStep(out stepUpOffset, allCPs, groundCP, velocity);
+
+            //Steps
+            if (stepUp)
+            {
+                stepUpOffset += Vector3.up * .1f;
+                Debug.Log("Step up:" + stepUpOffset);
+                steppingUp = true;
+                halfStepOffset = .5f * stepUpOffset;
+                //this.GetComponent<Rigidbody>().position += stepUpOffset;
+                this.GetComponent<Rigidbody>().position += halfStepOffset;
+                this.GetComponent<Rigidbody>().velocity = lastVelocity;
+            }
+
+
+        }
+        else
+        {
+            grounded = false;
+            this.GetComponent<Rigidbody>().position += halfStepOffset;
+            this.GetComponent<Rigidbody>().velocity = lastVelocity;
+
+            steppingUp = false;
+
+        }
+
         allCPs.Clear();
         lastVelocity = velocity;
 

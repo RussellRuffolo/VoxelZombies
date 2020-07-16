@@ -105,7 +105,7 @@ public class ServerPlayerManager : MonoBehaviour
         Rigidbody playerRB = playerTransform.GetComponent<Rigidbody>();
 
         float yVel = playerRB.velocity.y;
-        inputs.moveState = playerTransform.GetComponent<ServerPositionTracker>().CheckPlayerState(inputs.moveState);
+        inputs.moveState = playerTransform.GetComponent<ServerPositionTracker>().CheckPlayerState();
         if (inputs.moveState == 0) //normal movement
         {
             bool onGround = playerTransform.GetComponent<HalfBlockDetector>().CheckGrounded(); 
@@ -143,86 +143,10 @@ public class ServerPlayerManager : MonoBehaviour
             playerRB.velocity += yVel * Vector3.up;
         }
 
+        playerTransform.GetComponent<HalfBlockDetector>().CheckSteps();
 
     }
 
-    private void FixedUpdate()
-    {
-        //RunInputs();
-      
-    }
-
-    private void RunInputs()
-    {
-        //apply forces based on inputs
-        foreach(ushort id in PlayerDictionary.Keys)
-        {
-            Transform playerTransform = PlayerDictionary[id];
-            Rigidbody playerRB = playerTransform.GetComponent<Rigidbody>();
-
-            PlayerInputs inputs = InputDictionary[id];
-            
-            if(inputs.ServerTickNumber == 0)
-            {
-                inputs.ServerTickNumber = serverTickNumber;
-            }
-            float yVel = playerRB.velocity.y;
-
-            inputs.moveState = playerTransform.GetComponent<ServerPositionTracker>().CheckPlayerState(inputs.moveState);
-
-            if(inputs.moveState == 0) //normal movement
-            {
-                bool onGround = playerTransform.GetComponent<HalfBlockDetector>().grounded;
-           
-                if (onGround)
-                {
-
-                    if (inputs.Jump)
-                    {
-                       
-                        yVel = JumpSpeed;
-                    }
-
-                }
-                else
-                {
-                    yVel -= gravAcceleration * Time.fixedDeltaTime;
-                }
-
-                playerRB.velocity = inputs.moveVector * PlayerSpeed;
-                playerRB.velocity += yVel * Vector3.up;
-
-            }
-            else if(inputs.moveState == 1) //water movement
-            {
-
-                if(inputs.Jump)
-                {
-                    yVel = verticalWaterSpeed;
-                }
-                else
-                {
-                    yVel = -verticalWaterSpeed;
-                }
-
-                playerRB.velocity = inputs.moveVector * horizontalWaterSpeed;
-                playerRB.velocity += yVel * Vector3.up;
-            }
-        }
-
-        //run simulation for 1 tick
-        Physics.Simulate(Time.fixedDeltaTime);
-        serverTickNumber++;
-        //send updated states to clients
-        foreach (ushort id in PlayerDictionary.Keys)
-        {
-            int serverTickDelta = serverTickNumber - InputDictionary[id].ServerTickNumber;
-            Vector3 playerVelocity = PlayerDictionary[id].GetComponent<Rigidbody>().velocity;
-           // vServer.SendPositionUpdate(id, PlayerDictionary[id].position, InputDictionary[id].ClientTickNumber, serverTickDelta, playerVelocity);
-        }
-
-
-    }
 }
 
 public class PlayerInputs

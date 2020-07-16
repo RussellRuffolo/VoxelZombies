@@ -69,36 +69,9 @@ public class ServerPositionTracker : MonoBehaviour
      
     }
 
-    private void OnTriggerEnter(Collider other)
-    {
-        /*
-        if(other.CompareTag("Water"))
-        {
-            Debug.Log("In water");
-            pManager.InputDictionary[ID].moveState = 1;
-        }
-        */
-    }
 
-    private void OnTriggerExit(Collider other)
-    {
-        /*
-        if (other.CompareTag("Water"))
-        {
-            Vector3 feetPosition = new Vector3(transform.position.x, transform.position.y - .75f, transform.position.z);
-            Vector3 headPosition = new Vector3(transform.position.x, transform.position.y - .75f, transform.position.z);
 
-            if(world[Mathf.FloorToInt(feetPosition.x), Mathf.FloorToInt(feetPosition.y), Mathf.FloorToInt(feetPosition.z)] != 9 && world[Mathf.FloorToInt(headPosition.x), Mathf.FloorToInt(headPosition.y), Mathf.FloorToInt(headPosition.z)] != 9)
-            {
-                Debug.Log("Out of water");
-                pManager.InputDictionary[ID].moveState = 0;
-            }
-              
-        }
-        */
-    }
-
-    public ushort CheckPlayerState(ushort lastState)
+    public ushort CheckPlayerState()
     {
         Collider[] thingsHit = Physics.OverlapBox(transform.position + Vector3.down * .1f, colliderHalfExtents);
 
@@ -110,24 +83,19 @@ public class ServerPositionTracker : MonoBehaviour
             }
         }
 
-        if (lastState == 0)
+  
+        Vector3 feetPosition = new Vector3(transform.position.x, transform.position.y - .75f, transform.position.z);
+        Vector3 headPosition = new Vector3(transform.position.x, transform.position.y - .75f, transform.position.z);
+
+        if (world[Mathf.FloorToInt(feetPosition.x), Mathf.FloorToInt(feetPosition.y), Mathf.FloorToInt(feetPosition.z)] != 9 && world[Mathf.FloorToInt(headPosition.x), Mathf.FloorToInt(headPosition.y), Mathf.FloorToInt(headPosition.z)] != 9)
         {
             return 0;
-        }
-        else
-        {
-            Vector3 feetPosition = new Vector3(transform.position.x, transform.position.y - .75f, transform.position.z);
-            Vector3 headPosition = new Vector3(transform.position.x, transform.position.y - .75f, transform.position.z);
-
-            if (world[Mathf.FloorToInt(feetPosition.x), Mathf.FloorToInt(feetPosition.y), Mathf.FloorToInt(feetPosition.z)] != 9 && world[Mathf.FloorToInt(headPosition.x), Mathf.FloorToInt(headPosition.y), Mathf.FloorToInt(headPosition.z)] != 9)
-            {
-                return 0;
-
-            }
-
-            return 1;
 
         }
+
+        return 1;
+
+        
 
     }
 }
