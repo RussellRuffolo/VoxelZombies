@@ -463,24 +463,17 @@ namespace Client
 
                 Vector3 position = new Vector3(x, y, z);
 
-                if (ID == Client.ID)
+          
+                if (NetworkPlayerDictionary.ContainsKey(ID))
                 {
-                    //This will be replaced with real netcode
-                    //if (localPlayerTransform != null)
-                    //    localPlayerTransform.position = position;
+                    NetworkPlayerDictionary[ID].GetComponent<NetworkMotionSmoother>().SetTargetPosition(position);
                 }
                 else
                 {
-                    if (NetworkPlayerDictionary.ContainsKey(ID))
-                    {
-                        NetworkPlayerDictionary[ID].position = position;
-                    }
-                    else
-                    {
-                        Debug.LogError("No Network Player corresponds to given ID: " + ID);
-                    }
-
+                    Debug.LogError("No Network Player corresponds to given ID: " + ID);
                 }
+
+                
 
 
             }

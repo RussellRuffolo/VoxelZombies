@@ -20,6 +20,8 @@ public class ClientCameraController : MonoBehaviour
 
     Camera playerCam;
 
+    public bool MenuOpen;
+
     // Start is called before the first frame update
     void Start()
     {
@@ -27,23 +29,26 @@ public class ClientCameraController : MonoBehaviour
 
         Cursor.lockState = CursorLockMode.Locked;
         Cursor.visible = false;
-
+        MenuOpen = false;
     }
 
     // Update is called once per frame
     void Update()
     {
+       if(!MenuOpen)
         CameraLook();
 
         if (Input.GetKeyDown(KeyCode.Escape))
         {
             Cursor.lockState = CursorLockMode.None;
-            Cursor.visible = true;      
+            Cursor.visible = true;
+            MenuOpen = true;
         }
         if (Input.GetKeyDown(KeyCode.Mouse0))
         {
             Cursor.lockState = CursorLockMode.Locked;
-            Cursor.visible = false;         
+            Cursor.visible = false;
+            MenuOpen = false;
         }
     }
 
@@ -70,7 +75,7 @@ public class ClientCameraController : MonoBehaviour
 
         rotationX = Mathf.Clamp(rotationX, minimumX, maximumX);
 
-
+        
         playerCam.transform.localEulerAngles = new Vector3(-rotationX, rotationY, 0); 
 
     }

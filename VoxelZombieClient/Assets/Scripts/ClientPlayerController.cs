@@ -132,9 +132,13 @@ namespace Client
 
         void GetMouseRotation()
         {
-            rotationY += Input.GetAxis("Mouse X") * sensitivityX;
-            rotationTracker.transform.eulerAngles = new Vector3(0, rotationY, 0);
+            if(Cursor.lockState == CursorLockMode.Locked)
+            {
+                rotationY += Input.GetAxis("Mouse X") * sensitivityX;
+                rotationTracker.transform.eulerAngles = new Vector3(0, rotationY, 0);
+            }
         }
+        
 
         ClientInputs GetInputs()
         {
@@ -239,7 +243,7 @@ namespace Client
 
             if (positionError.sqrMagnitude > 0.001f)
             {
-                 Debug.Log("Found positon error with sqr magnitude: " + positionError.sqrMagnitude + " and " + (tickNumber - (ClientTickNumber)) + " ticks ago");
+                 //Debug.Log("Found positon error with sqr magnitude: " + positionError.sqrMagnitude + " and " + (tickNumber - (ClientTickNumber)) + " ticks ago");
 
                 //rewind to the given tick and replay to current tick
                 transform.position = serverPosition;

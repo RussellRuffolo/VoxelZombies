@@ -42,7 +42,6 @@ public class HalfBlockDetector : MonoBehaviour
             if (stepUp)
             {
                 stepUpOffset += Vector3.up * .1f;
-                Debug.Log("Step up:" + stepUpOffset);
                 steppingUp = true;
                 halfStepOffset = .5f * stepUpOffset;
                 //this.GetComponent<Rigidbody>().position += stepUpOffset;
