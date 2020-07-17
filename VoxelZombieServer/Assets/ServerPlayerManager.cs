@@ -21,6 +21,8 @@ public class ServerPlayerManager : MonoBehaviour
     public float horizontalWaterSpeed;
     public float verticalWaterSpeed;
 
+    public float waterExitSpeed;
+
     private int serverTickNumber = 0;
 
     VoxelServer vServer;
@@ -141,6 +143,11 @@ public class ServerPlayerManager : MonoBehaviour
 
             playerRB.velocity = inputs.moveVector * horizontalWaterSpeed;
             playerRB.velocity += yVel * Vector3.up;
+        }
+        else if(inputs.moveState == 3)
+        {
+            Vector3 waterJump = new Vector3(inputs.moveVector.x / 2, waterExitSpeed, inputs.moveVector.z / 2);
+            playerRB.velocity = waterJump;
         }
 
         playerTransform.GetComponent<HalfBlockDetector>().CheckSteps();

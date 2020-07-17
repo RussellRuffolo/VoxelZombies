@@ -7,7 +7,8 @@ namespace Client
     {
         private World world;
         private ClientPlayerController pController;
-  
+
+        private ushort lastMoveState = 0;
 
         Vector3 colliderHalfExtents;
         void Awake()
@@ -27,6 +28,7 @@ namespace Client
             {
                 if(col.CompareTag("Water"))
                 {
+                    lastMoveState = 1;
                     return 1;
                 }
             }
@@ -37,10 +39,17 @@ namespace Client
 
             if (world[Mathf.FloorToInt(feetPosition.x), Mathf.FloorToInt(feetPosition.y), Mathf.FloorToInt(feetPosition.z)] != 9 && world[Mathf.FloorToInt(headPosition.x), Mathf.FloorToInt(headPosition.y), Mathf.FloorToInt(headPosition.z)] != 9)
             {
+                if(lastMoveState == 1)
+                {
+                    lastMoveState = 3;
+                    return 3;
+                }
+                lastMoveState = 0;
                 return 0;
                   
             }
 
+            lastMoveState = 1;
             return 1;
 
             

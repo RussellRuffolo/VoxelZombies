@@ -75,7 +75,7 @@ public class Chunk : MonoBehaviour
     };
 
     private Vector3[] _topHalfVertices = new[]
-{
+    {
         new Vector3 (1, .5f, 0),
         new Vector3 (0, .5f, 0),
         new Vector3 (0, .5f, 1),
@@ -295,15 +295,6 @@ public class Chunk : MonoBehaviour
                     if (voxelType == 0)
                         continue;
 
-                    if (voxelType == 9)
-                    {
-                        // GameObject waterPrefab = Resources.Load<GameObject>("WaterTop");
-                        // GameObject newWater = Instantiate(waterPrefab);
-                        // newWater.transform.parent = transform;
-                        // newWater.transform.localPosition = new Vector3(x + .5f, y + .5f, z + .5f);
-                        // continue;
-                    }
-
                     if (normals.Count != vertices.Count)
                     {
                         Debug.Log("Normals: " + normals.Count + " Vertices: " + vertices.Count);
@@ -411,7 +402,7 @@ public class Chunk : MonoBehaviour
                     else { top = this[x, y + 1, z]; }
                     if (top == 44)
                         top = 0;
-                    if (_transparentBlockIDs.Contains(top) && top != voxelType)
+                    if (_transparentBlockIDs.Contains(top) && top != voxelType || voxelType == 44)
                     {
                         if (voxelType == 9 || voxelType == 11)
                         {
@@ -733,7 +724,7 @@ public class Chunk : MonoBehaviour
                     {
                         if (voxelType == 9 || voxelType == 11)
                         {
-                            foreach (var vert in _backVertices)
+                            foreach (var vert in _bottomVertices)
                                 waterVertices.Add(pos + vert);
 
                             waterUVs.Add(new Vector2(0, 0));
@@ -745,14 +736,14 @@ public class Chunk : MonoBehaviour
                                 waterNormals.Add(normal);
                             if (voxelType == 9)
                             {
-                                foreach (var tri in _backTriangles)
+                                foreach (var tri in _bottomTriangles)
                                 {
                                     waterTriangles.Add(waterVertPos + tri);
                                 }
                             }
                             else
                             {
-                                foreach (var tri in _backTriangles)
+                                foreach (var tri in _bottomTriangles)
                                 {
                                     lavaTriangles.Add(waterVertPos + tri);
                                 }

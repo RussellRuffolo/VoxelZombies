@@ -11,8 +11,18 @@ public class World
     {
         get
         {
-            var chunk = Chunks[ChunkID.FromWorldPos(x, y, z)];
-            return chunk[x & 0xF, y & 0xF, z & 0xF];
+            ChunkID ID = ChunkID.FromWorldPos(x, y, z);
+            Chunk chunk;
+            if (Chunks.TryGetValue(ID, out chunk))
+            {
+                return chunk[x & 0xF, y & 0xF, z & 0xF];
+            }
+            else
+            {
+                //100 is no value
+                return 100;
+            }
+         
         }
         set
         {

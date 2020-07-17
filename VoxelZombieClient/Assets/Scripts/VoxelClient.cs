@@ -10,18 +10,7 @@ namespace Client
 {
     public class VoxelClient : MonoBehaviour
     {
-        /*
-        const ushort MAP_TAG = 0;
-        const ushort PLAYER_INIT_TAG = 1;
-        const ushort ADD_PLAYER_TAG = 2;
-        const ushort INPUT_TAG = 3;
-        const ushort BLOCK_EDIT_TAG = 4;
-        const ushort POSITION_UPDATE_TAG = 5;
-        const ushort PLAYER_STATE_TAG = 6;
-        const ushort REMOVE_PLAYER_TAG = 7;
-        const ushort MAP_LOADED_TAG = 8;
-        const ushort MAP_RELOADED_TAG = 9;
-        */
+     
         public bool loadedFirstMap = false;
 
         public UnityClient Client;
@@ -141,16 +130,7 @@ namespace Client
             {
 
                 using (DarkRiftReader reader = message.GetReader())
-                {
-                    /*
-                    int Width = reader.ReadInt32();
-                    int Length = reader.ReadInt32();
-                    int Height = reader.ReadInt32();
-                    byte[] mapBytes = reader.ReadBytes();
-                    Debug.Log(mapBytes.Length);
-                    vEngine.LoadMap(Width, Length, Height, mapBytes);
-                    */
-
+                {            
                     string MapName = reader.ReadString();
 
                     vEngine.LoadMap(MapName);
@@ -160,17 +140,7 @@ namespace Client
             }
 
             if (!loadedFirstMap)
-            {
-                /*
-                using (DarkRiftWriter loadedWriter = DarkRiftWriter.Create())
-                {
-                    using (Message MapLoadedMessage = Message.Create(Tags.MAP_LOADED_TAG, loadedWriter))
-                    {
-                        Client.SendMessage(MapLoadedMessage, SendMode.Reliable);
-                        Debug.Log("Sent map loaded message");
-                    }
-                }
-                */
+            {        
                 loadedFirstMap = true;
             }
             else

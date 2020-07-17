@@ -16,7 +16,7 @@ namespace Client
         public float gravAcceleration;
         public float verticalWaterSpeed;
         public float horizontalWaterSpeed;
-
+        public float waterExitSpeed;
 
         public float minimumX = -60f;
         public float maximumX = 60f;
@@ -43,8 +43,7 @@ namespace Client
 
         ClientInputs[] LoggedInputs = new ClientInputs[1024];
         PlayerState[] LoggedStates = new PlayerState[1024];
-
-        List<ClientInputs> UnconfirmedInputs = new List<ClientInputs>();
+        
         private int lastReceivedStateTick = 0;
 
         private float timer = 0.0f;
@@ -92,8 +91,7 @@ namespace Client
         }   
 
         void SendInputs()
-        {
-            UnconfirmedInputs.Clear();
+        {    
 
             int index = lastReceivedStateTick % 1024;
             if(lastReceivedStateTick < tickNumber - 1)
@@ -137,8 +135,7 @@ namespace Client
                 rotationY += Input.GetAxis("Mouse X") * sensitivityX;
                 rotationTracker.transform.eulerAngles = new Vector3(0, rotationY, 0);
             }
-        }
-        
+        }        
 
         ClientInputs GetInputs()
         {
@@ -225,6 +222,11 @@ namespace Client
                 playerRB.velocity = currentInputs.MoveVector * horizontalWaterSpeed;
                 playerRB.velocity += yVel * Vector3.up;
             }
+            else if(moveState == 3)
+            {
+                Vector3 waterJump = new Vector3(currentInputs.MoveVector.x / 2, waterExitSpeed, currentInputs.MoveVector.z / 2);
+                playerRB.velocity = waterJump;
+            }
 
         }
 
@@ -305,7 +307,6 @@ namespace Client
             velocity = Vector3.zero;
             Tick = 0;
         }
-
 
         public PlayerState(Vector3 pos, Vector3 vel, int tick)
         {

@@ -20,6 +20,8 @@ public class VoxelEngine : MonoBehaviour
     public BoundaryController bController;
     public WaterEngine wEngine;
 
+
+
     const ushort MAP_TAG = 4;
     private void Awake()
     {
@@ -56,7 +58,7 @@ public class VoxelEngine : MonoBehaviour
         MapData hawaii = new MapData("hawaii", 27075, 1, 67, 43);
         mapList.Add(hawaii);
 
-        mapList.Add(hawaii);
+    
 
         // MapData babel = new MapData("babel", 17974, 0, 0, 0);
         // mapList.Add(babel);
@@ -64,12 +66,16 @@ public class VoxelEngine : MonoBehaviour
         MapData digital_world = new MapData("digital_world", 0, 1, 54, 1);
         mapList.Add(digital_world);
 
-        
+        MapData colony = new MapData("colony", 0, 56, 67, 8);
+        mapList.Add(colony);
+
+
+        mapList.Add(hawaii);
     }
 
     public void LoadMap(MapData map)
     {
-      
+   
         UnloadMap();
 
         currentMap = map;

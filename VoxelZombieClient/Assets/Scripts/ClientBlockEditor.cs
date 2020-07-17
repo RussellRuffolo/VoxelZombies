@@ -41,6 +41,16 @@ namespace Client
         new Vector3 (1, 1.05f, 0)
     };
 
+
+        private Vector3[] _topHalfVertices = new[]
+        {
+        new Vector3 (1, .55f, 0),
+        new Vector3 (0, .55f, 0),
+        new Vector3 (0, .55f, 1),
+        new Vector3 (1, .55f, 1),
+         new Vector3 (1, .55f, 0)
+    };
+
         private Vector3[] _rightVertices = new[]
         {
         new Vector3 (1.05f, 0, 0),
@@ -80,6 +90,7 @@ namespace Client
         private Vector3 selectionPosition;
         private Vector3 selectionNormal;
 
+        private Vector3 halfBlockNormal = new Vector3(0, .1f, 0);
         // Start is called before the first frame update
         void Start()
         {
@@ -117,8 +128,9 @@ namespace Client
 
             foreach (RaycastHit hit in hitData)
             {
-                if (!hit.collider.CompareTag("Player"))
+                if (!hit.collider.CompareTag("Player") && !hit.collider.CompareTag("Water"))
                 {
+                  
                     float pointX = hit.point.x;
                     float pointY = hit.point.y;
                     float pointZ = hit.point.z;
@@ -133,7 +145,10 @@ namespace Client
 
                     if (currentWorld[x, y, z] == 0)
                     {
-                       // Debug.Log("Error, no block there");
+                        blockOutline.positionCount = 0;
+
+                        //if nothing is hit make normal 0
+                        selectionNormal = Vector3.zero;
                         return;
                     }
 
@@ -141,11 +156,28 @@ namespace Client
                     blockOutline.positionCount = 5;
                     if (hit.normal == Vector3.up)
                     {
-
-                        for (int i = 0; i < 5; i++)
+                        if(currentWorld[x,y,z] == 44)
                         {
-                            blockOutline.SetPosition(i, blockOffset + _topVertices[i]);
+                            for (int i = 0; i < 5; i++)
+                            {
+                                blockOutline.SetPosition(i, blockOffset + _topHalfVertices[i]);
+
+                            }
+
+
+                            selectionPosition = new Vector3(x, y, z);
+                            selectionNormal = halfBlockNormal;
+
+                            return;
                         }
+                        else
+                        {
+                            for (int i = 0; i < 5; i++)
+                            {
+                                blockOutline.SetPosition(i, blockOffset + _topVertices[i]);
+                            }
+                        }
+                      
                     }
                     else if (hit.normal == Vector3.back)
                     {
@@ -196,6 +228,8 @@ namespace Client
                 }
 
             }
+
+          
             blockOutline.positionCount = 0;
 
             //if nothing is hit make normal 0
@@ -210,14 +244,16 @@ namespace Client
                 int y = (int)selectionPosition.y;
                 int z = (int)selectionPosition.z;
 
-                if (currentWorld[x, y, z] == 0)
+                ushort breakSpotTag = currentWorld[x, y, z];
+
+                if (breakSpotTag == 0)
                 {
                     Debug.Log("Error, no block there");
                     return;
                 }
 
-                //7 is bedrock
-                if (currentWorld[x, y, z] == 7)
+                //bedrock, water, and lava can not be broken
+                if (breakSpotTag == 7 || breakSpotTag == 9 || breakSpotTag == 11)
                 {
                     return;
                 }
@@ -226,26 +262,47 @@ namespace Client
                 return;
             }
 
-
         }
 
         void PlaceBlock()
         {
-            if (selectionNormal != Vector3.zero)
+            if(selectionNormal == halfBlockNormal)
+            {
+                int x = (int)(selectionPosition.x);
+                int y = (int)(selectionPosition.y);
+                int z = (int)(selectionPosition.z);
+
+                if(placeBlockTag == 44)
+                {
+                    vClient.SendBlockEdit((ushort)x, (ushort)y, (ushort)z, 43);
+                }
+                else
+                {
+                    y++;
+                    ushort placeSpotTag = currentWorld[x, y, z];
+
+                    if (placeSpotTag == 0 || placeSpotTag == 9 || placeSpotTag == 11)
+                    {
+                        vClient.SendBlockEdit((ushort)x, (ushort)y, (ushort)z, placeBlockTag);
+                    }
+                }
+
+            }
+            else if (selectionNormal != Vector3.zero)
             {
                 int x = (int)(selectionPosition.x + selectionNormal.x);
                 int y = (int)(selectionPosition.y + selectionNormal.y);
                 int z = (int)(selectionPosition.z + selectionNormal.z);
 
-                if (currentWorld[x, y, z] == 0)
+                ushort placeSpotTag = currentWorld[x, y, z];
+
+                if (placeSpotTag == 0 || placeSpotTag == 9 || placeSpotTag == 11)
                 {
                     vClient.SendBlockEdit((ushort)x, (ushort)y, (ushort)z, placeBlockTag);
                 }
 
                 return;
-
             }
-
         }
 
         void SelectBlock()
