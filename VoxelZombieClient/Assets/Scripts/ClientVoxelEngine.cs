@@ -35,9 +35,14 @@ public class ClientVoxelEngine : MonoBehaviour
         }
 
         var mapFile = new NbtFile();
-  
-        mapFile.LoadFromFile(Application.streamingAssetsPath + "\\" + mapName + ".schematic");
-        
+        if(Application.platform == RuntimePlatform.OSXPlayer)
+        {
+            mapFile.LoadFromFile(Application.dataPath + "/Resources" + "/Data" + "/StreamingAssets/" + mapName + ".schematic");
+        }
+        else if(Application.platform == RuntimePlatform.WindowsPlayer || Application.platform == RuntimePlatform.WindowsEditor)
+        {
+            mapFile.LoadFromFile(Application.streamingAssetsPath + "\\" + mapName + ".schematic");
+        }
       
 
         NbtCompound mapCompoundTag = mapFile.RootTag;
