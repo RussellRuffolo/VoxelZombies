@@ -22,7 +22,7 @@ public class ServerBlockEditor : MonoBehaviour
     public bool TryApplyEdit(ushort x, ushort y, ushort z, ushort blockTag)
     {
 
-        if (world[x, y, z] != blockTag)
+        if (x < vEngine.currentMap.Length && y < vEngine.currentMap.Height && z < vEngine.currentMap.Width && world[x, y, z] != blockTag)
         {
             //check to see if block intersects players
             //a new block should not be allowed to placed inside a player

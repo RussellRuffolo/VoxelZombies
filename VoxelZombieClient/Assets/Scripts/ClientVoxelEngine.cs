@@ -9,6 +9,8 @@ public class ClientVoxelEngine : MonoBehaviour
     public World world = new World();
     public List<Material> materialList;
 
+    public BoundaryController bController;
+
     public int Length, Width, Height;
 
     private void Awake()
@@ -43,7 +45,9 @@ public class ClientVoxelEngine : MonoBehaviour
 
          Length = length;
          Width = width;
-         Height = height;        
+         Height = height;
+
+        bController.SetMapBoundaries(Length, Width, Height);
 
         byte[] mapBytes = mapCompoundTag["Blocks"].ByteArrayValue;
         byte[] dataBytes = mapCompoundTag["Data"].ByteArrayValue;
