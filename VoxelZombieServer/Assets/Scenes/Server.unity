@@ -412,7 +412,7 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: 
   materialList:
-  - {fileID: 2100000, guid: cb3345068e9f7e44eb46bbc116f40f05, type: 2}
+  - {fileID: 2100000, guid: 0a56279e17a2ef44d96f743d47ce429f, type: 2}
   - {fileID: 2100000, guid: aaa5b450e484f6747aa56d75c4a0db4a, type: 2}
   - {fileID: 2100000, guid: 06cafbcecb1105740ae2469d5452e6e2, type: 2}
   - {fileID: 2100000, guid: 7d4cad166bd8385409de67a598bfa61a, type: 2}
@@ -517,6 +517,7 @@ MonoBehaviour:
   RoundTime: 6000
   MinuteCounter: 0
   inStartTime: 0
+  inVoteTime: 0
   map1Votes: 0
   map2Votes: 0
   map3Votes: 0

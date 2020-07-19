@@ -112,7 +112,7 @@ public class ServerPlayerManager : MonoBehaviour
         {
             bool onGround = playerTransform.GetComponent<HalfBlockDetector>().CheckGrounded(); 
 
-            if (onGround)
+            if (onGround && yVel <= 0)
             {
 
                 if (inputs.Jump)

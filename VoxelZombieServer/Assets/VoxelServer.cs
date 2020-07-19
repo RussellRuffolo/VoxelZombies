@@ -73,6 +73,13 @@ public class VoxelServer : MonoBehaviour
 
     void PlayerDisconnected(object sender, ClientDisconnectedEventArgs e)
     {
+        bool wasHuman = false;
+        if(PlayerManager.PlayerDictionary[e.Client.ID].GetComponent<ServerPositionTracker>().stateTag == 0)
+        {
+            wasHuman = true;
+        }
+
+        SendPublicChat(playerNames[e.Client.ID] + " has left the game.", 2);
         if(PlayerManager.PlayerDictionary.ContainsKey(e.Client.ID))
         {
             ushort playerID = e.Client.ID;
@@ -92,7 +99,19 @@ public class VoxelServer : MonoBehaviour
                     }
                 }
             }
+
         }
+
+        if(wasHuman)
+        {
+            gManager.CheckZombieWin();
+        }
+        else
+        {
+            gManager.CheckNoZombies();
+        }
+
+
        
     }
 
@@ -128,6 +147,8 @@ public class VoxelServer : MonoBehaviour
 
     }
 
+    char[] chatParams = { ' ' };
+
     private void HandlePlayerChat(MessageReceivedEventArgs e)
     {
         using (DarkRiftReader reader = e.GetMessage().GetReader())
@@ -136,27 +157,39 @@ public class VoxelServer : MonoBehaviour
             ushort colorTag = reader.ReadUInt16();
 
             if(chatMessage[0] == '/')
-            {
-                Debug.Log("Chat command");
-                chatMessage.Remove(0);
-                string command = "";
-                while (chatMessage[0] != ' ' && chatMessage.Length > 1)
+            {                
+                string[] commands = chatMessage.Split(chatParams, System.StringSplitOptions.RemoveEmptyEntries);
+           
+       
+             
+                switch(commands[0])
                 {
-                    command += chatMessage[0];
-                    chatMessage.Remove(0);
-                }
-                chatMessage.Remove(0);
-
-                switch(command)
-                {
-                    case "vote":
-                        Debug.Log("Remaining vote message is: " + chatMessage);
+                    case "/vote":
+                        if(commands.Length > 1)
+                        {
+                            string mapName = commands[1];
+                            if(gManager.inVoteTime)
+                            {
+                                if(gManager.AddVote(mapName))
+                                {
+                                    SendPrivateChat("Your vote for " + mapName + " has been recorded. Thanks for voting!", 2, e.Client.ID);
+                                }
+                                else
+                                {
+                                    SendPrivateChat(mapName + " does not match a map candidate." , 2, e.Client.ID);
+                                }
+                            }
+                            else
+                            {
+                                SendPrivateChat("Map voting is closed until the end of the round.", 2, e.Client.ID);
+                            }
+                        }
                         break;
                     default:
-                        SendPrivateChat("The command: " + command + " does not exist", 2, e.Client.ID);
+                        SendPrivateChat("The command: " + commands[0] + " does not exist", 2, e.Client.ID);
                         break;
                 }
-
+                
             }
             else
             {
@@ -224,6 +257,8 @@ public class VoxelServer : MonoBehaviour
                 succesfulLogin = true;
 
                 InitializePlayer(e);
+
+                SendPublicChat(playerNames[e.Client.ID] + " has joined the fray.", 2);
             }
             
             using (DarkRiftWriter loginWriter = DarkRiftWriter.Create())

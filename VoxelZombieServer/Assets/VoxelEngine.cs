@@ -21,61 +21,47 @@ public class VoxelEngine : MonoBehaviour
     public WaterEngine wEngine;
 
 
-
+  
     const ushort MAP_TAG = 4;
     private void Awake()
     {
-        MapData EightBit = new MapData("8Bit", 7563, 42, 240, 14);
+        MapData EightBit = new MapData("8Bit", 42, 240, 14);
         mapList.Add(EightBit);
 
-       // MapData ThreeSixty = new MapData("360", 7013, 48, 13, 25);
-       // mapList.Add(ThreeSixty);
+        MapData cyclone = new MapData("cyclone",  39, 131, 15);
+        mapList.Add(cyclone);
 
-        //MapData runrunrun = new MapData("runrunrun", 8212, 3, 7, 63);
-       // mapList.Add(runrunrun);
+        MapData dwarves = new MapData("dwarves", 122, 2, 7);
+        mapList.Add(dwarves);
 
-        MapData Asylum = new MapData("asylum", 7002, 25, 129, 30);
+        MapData diametric = new MapData("diametric", 46, 19, 26);
+        mapList.Add(diametric);
+
+        MapData Asylum = new MapData("asylum",  25, 129, 30);
         mapList.Add(Asylum);
 
-        MapData Carson = new MapData("carson", 26219, 10, 35, 120);
-        mapList.Add(Carson);
+        MapData Carson = new MapData("carson",  10, 35, 120);
+        mapList.Add(Carson);    
 
-       // MapData Pandoras_Box = new MapData("pandoras_box", 24293, 2, 67, 64);
-      //  mapList.Add(Pandoras_Box);
-
-       // MapData school = new MapData("school", 24293, 122, 68, 68);
-       // mapList.Add(school);
-
-       // MapData yggdrasil = new MapData("yggdrasil", 16771, 60, 3, 3);
-       // mapList.Add(yggdrasil);
-
-        MapData Sunspots = new MapData("Sunspots", 69943, 60, 112, 108);
+        MapData Sunspots = new MapData("Sunspots",  60, 112, 108);
         mapList.Add(Sunspots);
 
-       // MapData AquaMansion = new MapData("aquamansion", 10228, 2, 34, 60);
-       // mapList.Add(AquaMansion);
-
-        MapData hawaii = new MapData("hawaii", 27075, 1, 67, 43);
+        MapData hawaii = new MapData("hawaii",  1, 67, 43);
         mapList.Add(hawaii);
 
-    
-
-        // MapData babel = new MapData("babel", 17974, 0, 0, 0);
-        // mapList.Add(babel);
-
-        MapData digital_world = new MapData("digital_world", 0, 1, 54, 1);
-        mapList.Add(digital_world);
-
-        MapData colony = new MapData("colony", 0, 56, 67, 8);
+        MapData colony = new MapData("colony", 56, 67, 8);
         mapList.Add(colony);
 
+        MapData italy = new MapData("italy",  53, 89, 63);
+        mapList.Add(italy);
+        MapData swiss = new MapData("swiss",  29, 50, 12);
+        mapList.Add(swiss);
 
         mapList.Add(hawaii);
     }
 
     public void LoadMap(MapData map)
-    {
-   
+    {      
         UnloadMap();
 
         currentMap = map;
@@ -228,7 +214,7 @@ public class MapData
 {
     public string Name;
 
-    public int NumBytes;
+
     public int SpawnX;
     public int SpawnY;
     public int SpawnZ;
@@ -237,10 +223,10 @@ public class MapData
     public int Width;
     public int Height;
 
-    public MapData(string name, int numBytes, int spawnX, int spawnY, int spawnZ)
+    public MapData(string name, int spawnX, int spawnY, int spawnZ)
     {
         Name = name;
-        //NumBytes = numBytes;
+      
 
         SpawnX = spawnX;
         SpawnY = spawnY;

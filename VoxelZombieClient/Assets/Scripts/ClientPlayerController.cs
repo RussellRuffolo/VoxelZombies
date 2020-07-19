@@ -190,7 +190,7 @@ namespace Client
             {
                 bool onGround = hbDetector.CheckGrounded();
 
-                if (onGround)
+                if (onGround && yVel <= 0)
                 {
 
                     if (currentInputs.Jump)

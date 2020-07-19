@@ -690,7 +690,7 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: 
   materialList:
-  - {fileID: 2100000, guid: a60811d514f771648bb9911f65d4396c, type: 2}
+  - {fileID: 2100000, guid: d7e93aeb9a2452d42ab3adced2403ce2, type: 2}
   - {fileID: 2100000, guid: 7620138d94bfdeb4aa5b47f81e578825, type: 2}
   - {fileID: 2100000, guid: 81fd2bb49714c624598a23206a4af5a6, type: 2}
   - {fileID: 2100000, guid: cd90994b788a1f74fa77ca4d62c296eb, type: 2}

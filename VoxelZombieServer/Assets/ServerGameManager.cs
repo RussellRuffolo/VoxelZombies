@@ -12,7 +12,9 @@ public class ServerGameManager : MonoBehaviour
     public float MinuteCounter;
 
     public bool inStartTime = false;
+    public bool inVoteTime = false;
 
+    MapData map1, map2, map3;
     public int map1Votes, map2Votes, map3Votes;
 
     //TODO- MAP VOTING
@@ -27,18 +29,13 @@ public class ServerGameManager : MonoBehaviour
 
     private void Start()
     {
-        StartRound();
+        StartRound(vEngine.GetRandomMap());
     }
 
-    public void StartRound()
+    public void StartRound(MapData nextMap)
     {
-        inStartTime = true;
-        int newMapIndex = Random.Range(0, vEngine.mapList.Count - 1);
-        while(vEngine.currentMap == vEngine.mapList[newMapIndex])
-        {
-            newMapIndex = Random.Range(0, vEngine.mapList.Count - 1);
-        }
-        vEngine.LoadMap(vEngine.mapList[newMapIndex]);
+        inStartTime = true;     
+        vEngine.LoadMap(nextMap);
         vServer.StartRound();
         RoundTime = 10 * 60;
         MinuteCounter = RoundTime - 60;
@@ -47,41 +44,52 @@ public class ServerGameManager : MonoBehaviour
 
     public void EndRound()
     {
-        vServer.SendPublicChat("Vote for the next map:", 2);
-        MapData map1 = vEngine.GetRandomMap();
-        MapData map2 = vEngine.GetRandomMap();
+
+        map1Votes = 0;
+        map2Votes = 0;
+        map3Votes = 0;       
+
+        map1 = vEngine.GetRandomMap();
+        map2 = vEngine.GetRandomMap();
+
         while(map2 == map1)
         {
             map2 = vEngine.GetRandomMap();
         }
-        MapData map3 = vEngine.GetRandomMap();
+        map3 = vEngine.GetRandomMap();
         while(map3 == map2 || map3 == map1)
         {
             map3 = vEngine.GetRandomMap();
         }
 
+        vServer.SendPublicChat("Vote for the next map:", 2);
         vServer.SendPublicChat("1: " + map1.Name + " 2: " + map2.Name + " 3: " + map3.Name, 2);
-
+        inVoteTime = true;
         StartCoroutine(VoteDelay());
 
     }
 
     private void Update()
     {
-        if(RoundTime > 0)
+        if(!inStartTime && !inVoteTime)
         {
-            RoundTime -= Time.deltaTime;
-            if(RoundTime < MinuteCounter)
+            if (RoundTime > 0)
             {
-                vServer.SendPublicChat("There are " + MinuteCounter / 60 + " minutes left in this round.", 2);
-                MinuteCounter -= 60;
+                RoundTime -= Time.deltaTime;
+                if (RoundTime < MinuteCounter)
+                {
+                    vServer.SendPublicChat("There are " + MinuteCounter / 60 + " minutes left in this round.", 2);
+                    MinuteCounter -= 60;
+                }
+            }
+            else if (RoundTime <= 0)
+            {
+                vServer.SendPublicChat("Humans win!", 2);
+                EndRound();
+
             }
         }
-        else if(RoundTime <= 0)
-        {
-            vServer.SendPublicChat("Humans win!", 2);
-            StartRound();
-        }
+
     }
 
     public void SubtractTime()
@@ -101,26 +109,108 @@ public class ServerGameManager : MonoBehaviour
         }
 
         vServer.SendPublicChat("Zombies win!", 2);
-
+        EndRound();
         //if no players were human then zombies win
+    }
+
+    public void CheckNoZombies()
+    {
+        foreach (Transform playerTransform in pMananger.PlayerDictionary.Values)
+        {
+            if (playerTransform.GetComponent<ServerPositionTracker>().stateTag == 1)
+            {
+                //If a player is a human return- zombies haven't won yet
+                return;
+            }
+        }
+
+        ushort newZombie = vServer.GetRandomPlayer();
+        //get random player returns 1000 if no players are connected
+        if (newZombie != 1000)
+        {
+            vServer.UpdatePlayerState(newZombie, 1);
+            vServer.SendPublicChat("The Infection restarts with " + vServer.playerNames[newZombie] + "!", 2);
+        }
+
+    }
+
+    public bool AddVote(string mapName)
+    {
+        if(mapName == map1.Name)
+        {
+            map1Votes++;
+            return true;
+        }
+        else if(mapName == map2.Name)
+        {
+            map2Votes++;
+            return true;
+        }
+        else if(mapName == map3.Name)
+        {
+            map3Votes++;
+            return true;
+        }
+        else
+        {
+            return false;
+        }
     }
 
     IEnumerator startDelay()
     {
         yield return new WaitForSeconds(20);
-        inStartTime = false;
-        ushort firstZombie = vServer.GetRandomPlayer();
-        //get random player returns 1000 if no players are connected
-        if(firstZombie != 1000)
+     
+
+        if(pMananger.PlayerDictionary.Count > 1)
         {
-            vServer.UpdatePlayerState(firstZombie, 1);
-            vServer.SendPublicChat("The Infection begins with " + vServer.playerNames[firstZombie] + "!", 2);
+            inStartTime = false;
+            ushort firstZombie = vServer.GetRandomPlayer();
+            //get random player returns 1000 if no players are connected
+            if (firstZombie != 1000)
+            {
+                vServer.UpdatePlayerState(firstZombie, 1);
+                vServer.SendPublicChat("The Infection begins with " + vServer.playerNames[firstZombie] + "!", 2);
+            }
         }
+        else
+        {
+            vServer.SendPublicChat("Not enough players to start a round.", 2);
+            StartCoroutine(startDelay());
+        }
+     
         
     }
 
     IEnumerator VoteDelay()
     {
         yield return new WaitForSeconds(20);
+        inVoteTime = false;
+
+        MapData nextMap;
+        if (map1Votes >= map2Votes)
+        {
+            if (map1Votes >= map3Votes)
+            {
+                nextMap = map1;
+            }
+            else
+            {
+                nextMap = map3;
+            }
+        }
+        else
+        {
+            if(map3Votes >= map2Votes)
+            {
+                nextMap = map3;
+            }
+            else
+            {
+                nextMap = map2;
+            }
+        }
+      
+        StartRound(nextMap);
     }
 }
