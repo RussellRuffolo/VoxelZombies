@@ -26,6 +26,8 @@ namespace Client
 
         private ushort playerState = 0;
 
+        private int chatsDisplayed = 0;
+
         void Awake()
         {
             vClient = GetComponent<VoxelClient>();
@@ -51,27 +53,22 @@ namespace Client
                         //send message to server here
                         vClient.SendChatMessage(inputMessage, playerState);
                     }
-                  
-                    logPanel.GetComponent<RectTransform>().SetSizeWithCurrentAnchors(RectTransform.Axis.Vertical, 60);
+
+                    
+                    UpdateDisplayedChats();
                     inputPanel.enabled = false;
-                    for (int i = 3; i < DisplayedLogs.Length; i++)
-                    {
-                        DisplayedLogs[i].enabled = false;
-                    }
+                
                     chatEnabled = false;
 
 
                 }
-                else if(Input.GetKeyDown(KeyCode.Backspace))
-                {
-                    Debug.Log("Backspace");
+                else if(Input.GetKeyDown(KeyCode.Backspace) || Input.GetKey(KeyCode.Backspace))
+                {                    
                     string toShorten = inputText.text;
                     if(toShorten.Length > 0)
                     {                   
                         inputText.text = toShorten.Substring(0, toShorten.Length - 1);
-                    }
-
-                    
+                    }                  
 
                 }
                 else
@@ -83,26 +80,11 @@ namespace Client
 
             }
             else
-            {
-                if (chatFadeTime > 0)
-                {
-                    chatFadeTime -= Time.deltaTime;
-                    if (chatFadeTime <= 0)
-                    {
-                        chatFadeTime = 0;
-                        logPanel.enabled = false;
-                        for (int i = 0; i < 3; i++)
-                        {
-                            DisplayedLogs[i].enabled = false;
-                        }
-                    }
-                }
+            {     
 
-
-                if (Input.GetKeyDown(KeyCode.T))
+                if (Input.GetKeyDown(KeyCode.T) || Input.GetKeyDown(KeyCode.Return))
                 {
-                    chatEnabled = true;
-                    Debug.Log("Typing");
+                    chatEnabled = true;                  
                     inputPanel.enabled = true;
 
                     logPanel.GetComponent<RectTransform>().SetSizeWithCurrentAnchors(RectTransform.Axis.Vertical, 220);
@@ -151,11 +133,41 @@ namespace Client
                 DisplayedLogs[i].color = chatLog[i].color;
             }
 
-            for (int i = 0; i < 3; i++)
+            chatsDisplayed++;
+
+            UpdateDisplayedChats();
+
+            StartCoroutine(ChatDelay());
+        
+        }
+
+        public void UpdateDisplayedChats()
+        {
+        
+            logPanel.enabled = true;
+
+            for (int i = 0; i < chatsDisplayed; i++)
             {
                 DisplayedLogs[i].enabled = true;
             }
-            chatFadeTime = 5;
+            for (int i = chatsDisplayed; i < DisplayedLogs.Length; i++)
+            {
+                DisplayedLogs[i].enabled = false;
+            }
+
+            logPanel.GetComponent<RectTransform>().SetSizeWithCurrentAnchors(RectTransform.Axis.Vertical, 20 * chatsDisplayed);
+            
+            
+        }
+
+        IEnumerator ChatDelay()
+        {
+            yield return new WaitForSeconds(chatFadeTime);
+            if(chatsDisplayed > 0)
+            {
+                chatsDisplayed--;
+                UpdateDisplayedChats();
+            }
         }
 
         public void SetInputColor(ushort colorTag)

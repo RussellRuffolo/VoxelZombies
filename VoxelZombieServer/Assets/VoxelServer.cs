@@ -387,24 +387,39 @@ public class VoxelServer : MonoBehaviour
 
     private void ReInitializePlayer(MessageReceivedEventArgs e)
     {
+
         loadedPlayers.Add(e.Client);
-        foreach(ushort id in PlayerManager.PlayerDictionary.Keys)
+
+        Vector3 spawnPosition = new Vector3(vEngine.currentMap.SpawnX, vEngine.currentMap.SpawnY, vEngine.currentMap.SpawnZ);
+
+        foreach (ushort id in PlayerManager.PlayerDictionary.Keys)
         {
             using (DarkRiftWriter positionWriter = DarkRiftWriter.Create())
             {
                 positionWriter.Write(id);
 
+
+                PlayerManager.PlayerDictionary[id].position = spawnPosition;
                 Vector3 playerPosition = PlayerManager.PlayerDictionary[id].position;
+
+                Rigidbody rb = PlayerManager.PlayerDictionary[id].GetComponent<Rigidbody>();
+                rb.velocity = Vector3.zero;
 
                 positionWriter.Write(playerPosition.x);
                 positionWriter.Write(playerPosition.y);
                 positionWriter.Write(playerPosition.z);
 
-
-                using (Message positionMessage = Message.Create(OTHER_POSITION_TAG, positionWriter))
+            
+                if(id != e.Client.ID)
                 {
-                    e.Client.SendMessage(positionMessage, SendMode.Unreliable);
+                    using (Message positionMessage = Message.Create(OTHER_POSITION_TAG, positionWriter))
+                    {
+                        e.Client.SendMessage(positionMessage, SendMode.Unreliable);
+                    }
                 }
+           
+                
+             
 
             }
 
@@ -499,7 +514,7 @@ public class VoxelServer : MonoBehaviour
                     if(c.ID == id)
                     {
                         c.SendMessage(positionMessage, SendMode.Unreliable);
-                    }                 
+                    }             
            
 
                 }
