@@ -23,6 +23,8 @@ public class ServerPositionTracker : MonoBehaviour
 
     private ushort lastMoveState = 0;
 
+    private bool hasWaterJump = false;
+
     private void Awake()
     {
         lastPosition = transform.position;
@@ -70,6 +72,14 @@ public class ServerPositionTracker : MonoBehaviour
 
     public ushort CheckPlayerState()
     {
+        Vector3 feetPosition = new Vector3(transform.position.x, transform.position.y - .75f, transform.position.z);
+        Vector3 headPosition = new Vector3(transform.position.x, transform.position.y - .75f, transform.position.z);
+        
+        if(world[Mathf.FloorToInt(feetPosition.x), Mathf.FloorToInt(feetPosition.y), Mathf.FloorToInt(feetPosition.z)] == 9)
+        {
+            hasWaterJump = true;
+        }
+
         Collider[] thingsHit = Physics.OverlapBox(transform.position + Vector3.down * .1f, colliderHalfExtents);
 
         foreach (Collider col in thingsHit)
@@ -81,9 +91,7 @@ public class ServerPositionTracker : MonoBehaviour
             }
         }
   
-        Vector3 feetPosition = new Vector3(transform.position.x, transform.position.y - .75f, transform.position.z);
-        Vector3 headPosition = new Vector3(transform.position.x, transform.position.y - .75f, transform.position.z);
-  
+        
 
         if (world[Mathf.FloorToInt(feetPosition.x), Mathf.FloorToInt(feetPosition.y), Mathf.FloorToInt(feetPosition.z)] != 9 && world[Mathf.FloorToInt(headPosition.x), Mathf.FloorToInt(headPosition.y), Mathf.FloorToInt(headPosition.z)] != 9)
         {
@@ -93,6 +101,7 @@ public class ServerPositionTracker : MonoBehaviour
                 return 3;
             }
 
+            hasWaterJump = false;
             lastMoveState = 0;
             return 0;
 
@@ -102,6 +111,18 @@ public class ServerPositionTracker : MonoBehaviour
         return 1;
 
         
+
+    }
+
+    public bool CheckWaterJump()
+    {
+        if(hasWaterJump)
+        {
+            hasWaterJump = false;
+            return true;
+        }
+
+        return false;
 
     }
 }

@@ -496,9 +496,10 @@ MonoBehaviour:
   m_EditorClassIdentifier: 
   PlayerPrefab: {fileID: 4801396134384152861, guid: 4a9b2df0bd74c7c418f1475674e38df5,
     type: 3}
-  PlayerSpeed: 5
-  JumpSpeed: 7
-  gravAcceleration: 20
+  PlayerSpeed: 4.25
+  AirAcceleration: 8.5
+  JumpSpeed: 8
+  gravAcceleration: 25
   horizontalWaterSpeed: 1.5
   verticalWaterSpeed: 1.5
   waterExitSpeed: 5

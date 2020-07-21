@@ -12,6 +12,7 @@ namespace Client
         public GameObject rotationTracker;
 
         public float playerSpeed;
+        public float AirAcceleration;
         public float jumpSpeed;
         public float gravAcceleration;
         public float verticalWaterSpeed;
@@ -137,10 +138,9 @@ namespace Client
             }
         }        
 
+        //samples user input to creat the ClientInputs object for this tick
         ClientInputs GetInputs()
-        {
-
-            //Vector3 playerForward = new Vector3(transform.forward.x, 0, transform.forward.z);    
+        {           
             Vector3 playerForward = new Vector3(rotationTracker.transform.forward.x, 0, rotationTracker.transform.forward.z);
             Vector3 playerRight = Quaternion.AngleAxis(90, Vector3.up) * playerForward;
             Vector3 speedVector = Vector3.zero;
@@ -185,6 +185,8 @@ namespace Client
             //run inputs here        
 
             float yVel = playerRB.velocity.y;
+            Vector3 horizontalSpeed = new Vector3(playerRB.velocity.x, 0, playerRB.velocity.z);
+
             moveState = pTracker.CheckPlayerState(moveState);
             if (moveState == 0) //normal movement
             {
@@ -195,16 +197,27 @@ namespace Client
 
                     if (currentInputs.Jump)
                     {
+                        horizontalSpeed = currentInputs.MoveVector.normalized * playerSpeed;
                         yVel = jumpSpeed;
+                    }
+                    else
+                    {
+                        horizontalSpeed = currentInputs.MoveVector.normalized * playerSpeed;
                     }
 
                 }
                 else
                 {
+                    horizontalSpeed += currentInputs.MoveVector.normalized * AirAcceleration * Time.fixedDeltaTime;
+
+                    if (horizontalSpeed.magnitude > playerSpeed)
+                    {
+                        horizontalSpeed = currentInputs.MoveVector.normalized * playerSpeed;
+                    }
                     yVel -= gravAcceleration * Time.fixedDeltaTime;
                 }
 
-                playerRB.velocity = currentInputs.MoveVector * playerSpeed;
+                playerRB.velocity = horizontalSpeed;
                 playerRB.velocity += yVel * Vector3.up;
 
             }
@@ -224,28 +237,42 @@ namespace Client
             }
             else if(moveState == 3)
             {
-                Vector3 waterJump = new Vector3(currentInputs.MoveVector.x / 2, waterExitSpeed, currentInputs.MoveVector.z / 2);
-                playerRB.velocity = waterJump;
+                if(currentInputs.Jump && pTracker.CheckWaterJump())
+                {
+                    Vector3 waterJump = new Vector3(currentInputs.MoveVector.x / 2, waterExitSpeed, currentInputs.MoveVector.z / 2);
+                    playerRB.velocity = waterJump;
+                }
+                else
+                {
+                    yVel -= gravAcceleration * Time.fixedDeltaTime;
+                    playerRB.velocity = currentInputs.MoveVector * playerSpeed;
+                    playerRB.velocity += yVel * Vector3.up;
+                }
+            
             }
 
         }
 
+        //This is called when a server state packet arrives
+        //The server state is compared to the saved client state and if it doesn't match
+        //The client current client state is redetermined using the server state
         public void ClientPrediction(Vector3 serverPosition, int ClientTickNumber, Vector3 serverVelocity)
         {
-            lastReceivedStateTick = ClientTickNumber;
-           
-            //check error between position/velocity at the tick supplied
+            
+            lastReceivedStateTick = ClientTickNumber;           
+            
             int bufferIndex = (ClientTickNumber) % 1024;
+
+            
             if(LoggedStates[bufferIndex] == null)
             {          
                 LoggedStates[bufferIndex] = new PlayerState(serverPosition, serverVelocity, ClientTickNumber);
             }
 
+            //check error between position/velocity at the tick supplied
             Vector3 positionError = LoggedStates[bufferIndex].position - serverPosition;
-
             if (positionError.sqrMagnitude > 0.001f)
-            {
-                 //Debug.Log("Found positon error with sqr magnitude: " + positionError.sqrMagnitude + " and " + (tickNumber - (ClientTickNumber)) + " ticks ago");
+            {               
 
                 //rewind to the given tick and replay to current tick
                 transform.position = serverPosition;
@@ -254,6 +281,7 @@ namespace Client
                 ushort simulMoveState = moveState;
 
                 int rewindTickNumber = ClientTickNumber;
+                //Simulate each tick until the current tick is reached
                 while (rewindTickNumber < this.tickNumber)
                 {
                     bufferIndex = rewindTickNumber % 1024;

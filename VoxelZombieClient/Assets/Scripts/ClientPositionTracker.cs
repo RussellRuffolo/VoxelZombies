@@ -11,6 +11,9 @@ namespace Client
         private ushort lastMoveState = 0;
 
         Vector3 colliderHalfExtents;
+
+        private bool hasWaterJump = false;
+
         void Awake()
         {
             world = GameObject.FindGameObjectWithTag("Network").GetComponent<ClientVoxelEngine>().world;
@@ -22,6 +25,15 @@ namespace Client
 
         public ushort CheckPlayerState(ushort lastState)
         {
+
+            Vector3 feetPosition = new Vector3(transform.position.x, transform.position.y - .75f, transform.position.z);
+            Vector3 headPosition = new Vector3(transform.position.x, transform.position.y - .75f, transform.position.z);
+
+            if (world[Mathf.FloorToInt(feetPosition.x), Mathf.FloorToInt(feetPosition.y), Mathf.FloorToInt(feetPosition.z)] == 9)
+            {
+                hasWaterJump = true;
+            }
+
             Collider[] thingsHit = Physics.OverlapBox(transform.position + Vector3.down * .1f, colliderHalfExtents);
 
             foreach(Collider col in thingsHit)
@@ -34,8 +46,7 @@ namespace Client
             }
 
         
-            Vector3 feetPosition = new Vector3(transform.position.x, transform.position.y - .75f, transform.position.z);
-            Vector3 headPosition = new Vector3(transform.position.x, transform.position.y - .75f, transform.position.z);
+            
 
             if (world[Mathf.FloorToInt(feetPosition.x), Mathf.FloorToInt(feetPosition.y), Mathf.FloorToInt(feetPosition.z)] != 9 && world[Mathf.FloorToInt(headPosition.x), Mathf.FloorToInt(headPosition.y), Mathf.FloorToInt(headPosition.z)] != 9)
             {
@@ -44,6 +55,8 @@ namespace Client
                     lastMoveState = 3;
                     return 3;
                 }
+
+                hasWaterJump = false;
                 lastMoveState = 0;
                 return 0;
                   
@@ -55,6 +68,20 @@ namespace Client
             
 
         }
+
+        public bool CheckWaterJump()
+        {
+            if (hasWaterJump)
+            {
+                hasWaterJump = false;
+                return true;
+            }
+
+            return false;
+
+        }
     }
+
+
 
 }

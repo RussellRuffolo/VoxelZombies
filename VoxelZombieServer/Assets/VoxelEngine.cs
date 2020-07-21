@@ -25,12 +25,8 @@ public class VoxelEngine : MonoBehaviour
     const ushort MAP_TAG = 4;
     private void Awake()
     {
-        MapData EightBit = new MapData("8Bit", 42, 240, 14);
-        mapList.Add(EightBit);
 
-        MapData cyclone = new MapData("cyclone",  39, 131, 15);
-        mapList.Add(cyclone);
-
+        MapData excitebike = new MapData("excitebike", 24, 34, 36);
         MapData dwarves = new MapData("dwarves", 122, 2, 7);
         mapList.Add(dwarves);
 

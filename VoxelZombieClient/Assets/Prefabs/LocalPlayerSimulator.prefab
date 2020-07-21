@@ -50,9 +50,10 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: 
   rotationTracker: {fileID: 6218170143455669374}
-  playerSpeed: 5
-  jumpSpeed: 7
-  gravAcceleration: 20
+  playerSpeed: 4.25
+  AirAcceleration: 8.5
+  jumpSpeed: 8
+  gravAcceleration: 25
   verticalWaterSpeed: 1.5
   horizontalWaterSpeed: 1.5
   waterExitSpeed: 5

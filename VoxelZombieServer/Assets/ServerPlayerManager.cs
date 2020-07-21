@@ -15,6 +15,7 @@ public class ServerPlayerManager : MonoBehaviour
     public Dictionary<ushort, Vector3> PlayerVelocities = new Dictionary<ushort, Vector3>();
 
     public float PlayerSpeed;
+    public float AirAcceleration;
     public float JumpSpeed;
     public float gravAcceleration;
 
@@ -107,6 +108,7 @@ public class ServerPlayerManager : MonoBehaviour
         Rigidbody playerRB = playerTransform.GetComponent<Rigidbody>();
 
         float yVel = playerRB.velocity.y;
+        Vector3 horizontalSpeed = new Vector3(playerRB.velocity.x, 0, playerRB.velocity.z);
         inputs.moveState = playerTransform.GetComponent<ServerPositionTracker>().CheckPlayerState();
         if (inputs.moveState == 0) //normal movement
         {
@@ -117,16 +119,27 @@ public class ServerPlayerManager : MonoBehaviour
 
                 if (inputs.Jump)
                 {
+                    horizontalSpeed = inputs.moveVector.normalized * PlayerSpeed;
                     yVel = JumpSpeed;
+                }
+                else
+                {
+                    horizontalSpeed = inputs.moveVector.normalized * PlayerSpeed;
                 }
 
             }
             else
             {
+                horizontalSpeed += inputs.moveVector.normalized * AirAcceleration * Time.fixedDeltaTime;
+
+                if(horizontalSpeed.magnitude > PlayerSpeed)
+                {
+                    horizontalSpeed = inputs.moveVector.normalized * PlayerSpeed;
+                }
                 yVel -= gravAcceleration * Time.fixedDeltaTime;
             }
 
-            playerRB.velocity = inputs.moveVector * PlayerSpeed;
+            playerRB.velocity = horizontalSpeed;
             playerRB.velocity += yVel * Vector3.up;
 
         }
@@ -144,10 +157,20 @@ public class ServerPlayerManager : MonoBehaviour
             playerRB.velocity = inputs.moveVector * horizontalWaterSpeed;
             playerRB.velocity += yVel * Vector3.up;
         }
-        else if(inputs.moveState == 3)
+        else if(inputs.moveState == 3) //exiting water
         {
-            Vector3 waterJump = new Vector3(inputs.moveVector.x / 2, waterExitSpeed, inputs.moveVector.z / 2);
-            playerRB.velocity = waterJump;
+            if(inputs.Jump && playerTransform.GetComponent<ServerPositionTracker>().CheckWaterJump())
+            {
+                Vector3 waterJump = new Vector3(inputs.moveVector.x / 2, waterExitSpeed, inputs.moveVector.z / 2);
+                playerRB.velocity = waterJump;
+            }
+            else
+            {
+                yVel -= gravAcceleration * Time.fixedDeltaTime;
+                playerRB.velocity = inputs.moveVector * PlayerSpeed;
+                playerRB.velocity += yVel * Vector3.up;
+            }
+          
         }
 
         playerTransform.GetComponent<HalfBlockDetector>().CheckSteps();
