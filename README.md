@@ -12,6 +12,18 @@ Players spawn in a 3D voxel environment as humans. After 30 seconds a player is 
 
 A central server handles all client input and is the ground truth for the game. Each client predict their state based on their input in order to prevent latency. When a client receives a state message from the server that contradicts their prediction, the client uses the server state as a new base and simulate forward to their current tick. 
 
+Here is a comparison between the client prediction with the inputs and how the server handles those same inputs. The client is on the left and the server is on the right. The ApplyInputs() function behaves identically in both cases.
+
+![ClientSimulation](/Screenshots/ClientSimulation.png) ![ServerSimulation](/Screenshots/ServerSimulation.png) 
+
+In order to combat packet loss, the client stores its inputs and sends every unconfirmed input to the server each frame in a UDP message. Whenever the server receives an input message it applies all unapplied inputs and confirms to the client that it has executed those inputs so the client can stop sending them. The server also tells the client the resulting state from those inputs. The client then compares the stored state at that tick to the true state from the server. If they are different the client goes back to the true state and simulates forward to the current client tick. 
+
+Here is a look at the client rollback code
+
+![ClientRollback](/Screenshots/ClientRollback.png)
+
+This system ensures instant responsiveness from the client in cases of latency and packet loss while still giving the server complete authority over the game state. 
+
 ### Voxel Based World
 
 The world of Voxel Zombies is represented by a list of block IDs that are used to populate a 3D grid with each block's vertices. Rendering of these vertices is split into 16x16x16 block chunks,  for quick rerendering when blocks are changed. This allows for real time building and breaking by players. Different blocks are usually distinquished by texture, but half height and liquid blocks are also supported. 

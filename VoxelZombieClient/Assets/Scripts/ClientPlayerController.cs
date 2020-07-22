@@ -66,8 +66,10 @@ namespace Client
         void Update()
         {
             GetMouseRotation();
+            //current inputs are the player inputs for this frame
             ClientInputs currentInputs = GetInputs();
 
+            //run the physics for as many ticks fit since last frame
             this.timer += Time.deltaTime;
             while (this.timer >= Time.fixedDeltaTime)
             {
@@ -75,30 +77,32 @@ namespace Client
 
                 int bufferIndex = tickNumber % 1024;
 
+                //store the state and inputs in circular buffers
                 LoggedStates[bufferIndex] = new PlayerState(transform.position, playerRB.velocity, tickNumber);
 
                 LoggedInputs[bufferIndex] = new ClientInputs(currentInputs.MoveVector, currentInputs.Jump, tickNumber);
 
+                //Apply the inputs to change player velocity
+                ApplyInputs(playerRB, currentInputs);              
 
-                ApplyInputs(playerRB, currentInputs);
-                
-
+                //Simulate one tick and increment the tick number
                 Physics.Simulate(Time.fixedDeltaTime);
-
                 tickNumber++;
             }
 
+            //Send all unconfirmed inputs to the server
             SendInputs();
         }   
 
+        //sends all inputs to the server that the server hasn't yet confirmed it has run
         void SendInputs()
         {    
-
+            //last received state tick is the tick number of the last state received from the server
             int index = lastReceivedStateTick % 1024;
             if(lastReceivedStateTick < tickNumber - 1)
             {          
                 int numInputs = (tickNumber - 1) - lastReceivedStateTick;
-                //Debug.Log("Num inputs: " + numInputs);
+               
                 using (DarkRiftWriter InputWriter = DarkRiftWriter.Create())
                 {
                     InputWriter.Write(numInputs);
@@ -257,12 +261,10 @@ namespace Client
         //The server state is compared to the saved client state and if it doesn't match
         //The client current client state is redetermined using the server state
         public void ClientPrediction(Vector3 serverPosition, int ClientTickNumber, Vector3 serverVelocity)
-        {
-            
-            lastReceivedStateTick = ClientTickNumber;           
+        {            
+            lastReceivedStateTick = ClientTickNumber;       
             
             int bufferIndex = (ClientTickNumber) % 1024;
-
             
             if(LoggedStates[bufferIndex] == null)
             {          
@@ -272,8 +274,7 @@ namespace Client
             //check error between position/velocity at the tick supplied
             Vector3 positionError = LoggedStates[bufferIndex].position - serverPosition;
             if (positionError.sqrMagnitude > 0.001f)
-            {               
-
+            {              
                 //rewind to the given tick and replay to current tick
                 transform.position = serverPosition;
                 playerRB.velocity = serverVelocity;

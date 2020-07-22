@@ -65,10 +65,15 @@ public class ServerPlayerManager : MonoBehaviour
             Transform targetPlayer = PlayerDictionary[clientID];
             Rigidbody playerRB = targetPlayer.GetComponent<Rigidbody>();
 
+            //allow this player to be moved and reassign its velocity
+            //having all players be kinematic allows each one to be simulated 
+            //seperately as inputs arrive
             playerRB.isKinematic = false;
             playerRB.velocity = PlayerVelocities[clientID];
 
+            //number of inputs received from the client
             int numInputs = reader.ReadInt32();
+      
             bool appliedInput = false;
             for(int i = 0; i < numInputs; i++)
             {
@@ -78,24 +83,28 @@ public class ServerPlayerManager : MonoBehaviour
 
                 int clientTickNum = reader.ReadInt32();
 
-                //make sure client sends zero at some point
+                //If this input is from a later tick than the most recent
+                //Simulate the tick on the player with the clients inputs
                 if(clientTickNum > TickDic[clientID])
                 {
                     appliedInput = true;
+
+                    //apply the clients inputs to change the player velocity
                     ApplyInputs(clientID, new PlayerInputs(moveVector, Jump));
 
+                    //simulate one tick
                     Physics.Simulate(Time.fixedDeltaTime);
 
+                    //update the clients most recent tick
                     TickDic[clientID]++;
                 }
-
             }
-
             if(appliedInput)
             {
+                //send the client a state update with the corresponding tick
                 vServer.SendPositionUpdate(clientID, targetPlayer.position, TickDic[clientID], playerRB.velocity);
             }
-
+            //store the players velocity and remove it from simulation
            PlayerVelocities[clientID] = playerRB.velocity;
             playerRB.isKinematic = true;
             
