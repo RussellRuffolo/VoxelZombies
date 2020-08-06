@@ -26,22 +26,28 @@ public class ServerBlockEditor : MonoBehaviour
         {
             //check to see if block intersects players
             //a new block should not be allowed to placed inside a player
-            Collider[] thingsHit = Physics.OverlapBox(new Vector3(x + .5f, y + .5f, z + .5f), new Vector3(.5f, .5f, .5f));
 
-            foreach (Collider col in thingsHit)
+            if(blockTag != 0)
             {
-                if (col.CompareTag("Player"))
+                Collider[] thingsHit = Physics.OverlapBox(new Vector3(x + .5f, y + .5f, z + .5f), new Vector3(.45f, .45f, .45f));
+
+                foreach (Collider col in thingsHit)
                 {
-                    Debug.Log("Hit player");
-                    return false;
+                    if (col.CompareTag("Player"))
+                    {
+                        Debug.Log("Hit player");
+                        return false;
+                    }
                 }
+
             }
+       
 
             world[x, y, z] = blockTag;
 
             EditedBlocks.Add(new BlockEdit(x, y, z, blockTag));
 
-            vEngine.mapBytes[z + x * vEngine.currentMap.Length + y * vEngine.currentMap.Length * vEngine.currentMap.Width] = (byte)blockTag;
+            //vEngine.mapBytes[z + x * vEngine.currentMap.Length + y * vEngine.currentMap.Length * vEngine.currentMap.Width] = (byte)blockTag;
 
             CheckChunks(x, y, z);
 

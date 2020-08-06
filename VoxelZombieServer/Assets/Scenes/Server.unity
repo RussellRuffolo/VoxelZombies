@@ -467,7 +467,6 @@ MonoBehaviour:
   - {fileID: 2100000, guid: 13e9807c17d38d1479929b9ab85b9b62, type: 2}
   - {fileID: 2100000, guid: fb4cf86ac13b8214aad97e68dce76fed, type: 2}
   - {fileID: 2100000, guid: 49ce4ea21d987c1488f5f39bdf629582, type: 2}
-  mapBytes: 
   bController: {fileID: 1426511997}
   wEngine: {fileID: 0}
 --- !u!114 &835489451

@@ -26,6 +26,7 @@ namespace Client
         Transform localPlayerTransform;
         Transform localSimTransform;
 
+        public GameObject loginCamera;
 
         ClientChatManager chatManager;
 
@@ -183,7 +184,7 @@ namespace Client
 
                         if (PlayerID == Client.ID)
                         {
-                            Debug.Log("Spawn Local Player");
+                            Destroy(loginCamera);
                             GameObject LocalPlayer = GameObject.Instantiate(LocalPlayerPrefab,
                                          position, Quaternion.Euler(eulerRotation.x, eulerRotation.y, eulerRotation.z));
 

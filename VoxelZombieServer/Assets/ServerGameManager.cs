@@ -94,7 +94,8 @@ public class ServerGameManager : MonoBehaviour
 
     public void SubtractTime()
     {
-        RoundTime -= 60;
+        inStartTime = false;
+        EndRound();
     }
 
     public void CheckZombieWin()

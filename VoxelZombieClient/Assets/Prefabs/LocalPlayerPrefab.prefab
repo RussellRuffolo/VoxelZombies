@@ -96,6 +96,8 @@ MonoBehaviour:
   m_EditorClassIdentifier: 
   editDistance: 7
   stepDistance: 0.01
+  hitmarker: {fileID: 3639800469976215314, guid: 190ec8d252848b042afcbc41b7944171,
+    type: 3}
   blockOutline: {fileID: -1066980457660310490}
 --- !u!120 &-1066980457660310490
 LineRenderer:

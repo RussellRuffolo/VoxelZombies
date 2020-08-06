@@ -13,10 +13,10 @@ namespace Client
 
         private Camera playerCam;
         public float editDistance;
-        public double stepDistance;
+        public float stepDistance;
         private World currentWorld;
         private VoxelClient vClient;
-
+        
         const ushort BLOCK_TAG = 3;
 
         private ushort placeBlockTag = 1;
@@ -99,6 +99,9 @@ namespace Client
             vClient = GameObject.FindGameObjectWithTag("Network").GetComponent<VoxelClient>();
 
             blockOutline.positionCount = 0;
+
+           
+  
         }
 
         // Update is called once per frame
@@ -124,37 +127,16 @@ namespace Client
 
         void ShowSelection()
         {
-            RaycastHit[] hitData = Physics.RaycastAll(playerCam.transform.position - playerCam.transform.forward, playerCam.transform.forward, editDistance);
 
-            foreach (RaycastHit hit in hitData)
-            {
-                if (!hit.collider.CompareTag("Player") && !hit.collider.CompareTag("Water"))
-                {
-                  
-                    float pointX = hit.point.x;
-                    float pointY = hit.point.y;
-                    float pointZ = hit.point.z;
+            FindBlock(playerCam.transform.position, playerCam.transform.forward);
+     
+            int x = (int)selectionPosition.x;
+            int y = (int)selectionPosition.y;
+            int z = (int)selectionPosition.z;
 
-                    pointX += playerCam.transform.forward.x * .0001f;
-                    pointY += playerCam.transform.forward.y * .0001f;
-                    pointZ += playerCam.transform.forward.z * .0001f;
-
-                    int x = Mathf.FloorToInt(pointX);
-                    int y = Mathf.FloorToInt(pointY);
-                    int z = Mathf.FloorToInt(pointZ);
-
-                    if (currentWorld[x, y, z] == 0)
-                    {
-                        blockOutline.positionCount = 0;
-
-                        //if nothing is hit make normal 0
-                        selectionNormal = Vector3.zero;
-                        return;
-                    }
-
-                    Vector3 blockOffset = new Vector3(x, y, z);
+            Vector3 blockOffset = new Vector3(selectionPosition.x, selectionPosition.y, selectionPosition.z);
                     blockOutline.positionCount = 5;
-                    if (hit.normal == Vector3.up)
+                    if (selectionNormal == Vector3.up)
                     {
                         if(currentWorld[x,y,z] == 44)
                         {
@@ -179,7 +161,7 @@ namespace Client
                         }
                       
                     }
-                    else if (hit.normal == Vector3.back)
+                    else if (selectionNormal == Vector3.back)
                     {
 
                         for (int i = 0; i < 5; i++)
@@ -188,7 +170,7 @@ namespace Client
                         }
 
                     }
-                    else if (hit.normal == Vector3.right)
+                    else if (selectionNormal == Vector3.right)
                     {
                         for (int i = 0; i < 5; i++)
                         {
@@ -196,7 +178,7 @@ namespace Client
                         }
 
                     }
-                    else if (hit.normal == Vector3.left)
+                    else if (selectionNormal == Vector3.left)
                     {
                         for (int i = 0; i < 5; i++)
                         {
@@ -204,7 +186,7 @@ namespace Client
                         }
 
                     }
-                    else if (hit.normal == Vector3.forward)
+                    else if (selectionNormal == Vector3.forward)
                     {
                         for (int i = 0; i < 5; i++)
                         {
@@ -212,7 +194,7 @@ namespace Client
                         }
 
                     }
-                    else if (hit.normal == Vector3.down)
+                    else if (selectionNormal == Vector3.down)
                     {
                         for (int i = 0; i < 5; i++)
                         {
@@ -221,19 +203,162 @@ namespace Client
 
                     }
 
-                    selectionPosition = new Vector3(x, y, z);
-                    selectionNormal = hit.normal;
+                    //selectionPosition = new Vector3(x, y, z);
+                  //  selectionNormal = hit.normal;
 
                     return;
+               // }
+
+          //  }
+
+          
+           // blockOutline.positionCount = 0;
+
+            //if nothing is hit make normal 0
+           // selectionNormal = Vector3.zero;
+
+           
+        }
+
+        void FindBlock(Vector3 startPosition, Vector3 direction)
+        {
+
+            Vector3 currentPosition = startPosition;              
+
+            float distanceStepped = 0;
+
+            int currentBlock;
+            Vector3 lastRaycastedTarget = new Vector3(-1, 0, 0);
+
+
+            while (distanceStepped < editDistance)
+            {
+                currentPosition += direction * stepDistance;
+                distanceStepped += stepDistance;
+
+
+                currentBlock = CheckBlock(currentPosition);
+
+                int x = Mathf.FloorToInt(currentPosition.x);
+                int y = Mathf.FloorToInt(currentPosition.y);
+                int z = Mathf.FloorToInt(currentPosition.z);
+
+
+
+                if (currentBlock == 1)
+                {
+                    
+                    selectionPosition = new Vector3(x, y, z);
+
+                    FindNormal(currentPosition, -direction);
+                   
+                    return;
                 }
+                else if (currentBlock == 2 && lastRaycastedTarget != new Vector3(x, y, z))
+                {
+                
+                    RaycastHit[] hitData = Physics.RaycastAll(playerCam.transform.position - playerCam.transform.forward, playerCam.transform.forward, editDistance);
+
+                    foreach (RaycastHit hit in hitData)
+                    {
+                        if (hit.collider.CompareTag("Model"))
+                        {
+                            selectionPosition = new Vector3(x, y, z);
+                            FindNormal(currentPosition, -direction);
+                            return;
+
+                        }
+                    }
+
+                    lastRaycastedTarget = new Vector3(x, y, z);
+                }
+            }
+
+            //If no block found
+            blockOutline.positionCount = 0;
+            selectionPosition = Vector3.zero;
+            selectionNormal = Vector3.zero;
+        }
+
+        void FindNormal(Vector3 hitPosition, Vector3 backDirection)
+        {
+            Vector3 currentPosition = hitPosition;
+            float distanceStepped = 0;
+
+         
+
+            while(distanceStepped < .5f)
+            {
+                currentPosition += backDirection * .01f;
+                distanceStepped += .01f;
+
+               
+                if(CheckBlock(currentPosition) == 0)
+                {
+                    int x = Mathf.FloorToInt(currentPosition.x);
+                    int y = Mathf.FloorToInt(currentPosition.y);
+                    int z = Mathf.FloorToInt(currentPosition.z);
+
+                    if (x != selectionPosition.x)
+                    {
+                        if (x > selectionPosition.x)
+                        {
+                            selectionNormal = Vector3.right;
+                            return;
+                        }
+                        selectionNormal = Vector3.left;
+                        return;
+                    }
+                    else if (y != selectionPosition.y)
+                    {
+                        if (y > selectionPosition.y)
+                        {
+                            selectionNormal = Vector3.up;
+                            return;
+                        }
+                        selectionNormal = Vector3.down;
+                        return;
+                    }
+                    else
+                    {
+                        if(z > selectionPosition.z)
+                        {
+                            selectionNormal = Vector3.forward;
+                            return;
+                        }
+                      
+                        selectionNormal = Vector3.back;
+                        return;
+                    }
+                     
+
+                }
+                
 
             }
 
-          
-            blockOutline.positionCount = 0;
+        }
 
-            //if nothing is hit make normal 0
-            selectionNormal = Vector3.zero;
+        int CheckBlock(Vector3 checkPosition)
+        {
+            int x = Mathf.FloorToInt(checkPosition.x);
+            int y = Mathf.FloorToInt(checkPosition.y);
+            int z = Mathf.FloorToInt(checkPosition.z);
+            
+            //untargetable blocks: air, water, lava
+            if (currentWorld[x, y, z] == 0 || currentWorld[x,y,z] == 9 || currentWorld[x,y,z] == 11)
+            {
+                return 0;
+            }
+
+            //modeled blocks: flowers, mushorooms
+            if (currentWorld[x, y, z] == 37 || currentWorld[x, y, z] == 38 || currentWorld[x, y, z] == 39 || currentWorld[x, y, z] == 40) 
+            {
+                return 2;
+            }
+
+            //any targetable block
+            return 1;
         }
 
         void BreakBlock()
@@ -255,12 +380,15 @@ namespace Client
                 //bedrock, water, and lava can not be broken
                 if (breakSpotTag == 7 || breakSpotTag == 9 || breakSpotTag == 11)
                 {
+                    Debug.Log("Can't break water lava or bedrock");
                     return;
                 }
 
+               
                 vClient.SendBlockEdit((ushort)x, (ushort)y, (ushort)z, 0);
                 return;
             }
+        
 
         }
 
@@ -307,40 +435,20 @@ namespace Client
 
         void SelectBlock()
         {
-            RaycastHit[] hitData = Physics.RaycastAll(playerCam.transform.position, playerCam.transform.forward, editDistance);
-
-            foreach (RaycastHit hit in hitData)
+            if(selectionNormal != Vector3.zero)
             {
-                if (!hit.collider.CompareTag("Player"))
+                int x = (int)selectionPosition.x;
+                int y = (int)selectionPosition.y;
+                int z = (int)selectionPosition.z;
+
+                ushort selectTag = currentWorld[x, y, z];
+
+                if (selectTag != 7 && selectTag != 0 && selectTag != 9 && selectTag != 11)
                 {
-                    float pointX = hit.point.x;
-                    float pointY = hit.point.y;
-                    float pointZ = hit.point.z;
-
-                    pointX += playerCam.transform.forward.x * .01f;
-                    pointY += playerCam.transform.forward.y * .01f;
-                    pointZ += playerCam.transform.forward.z * .01f;
-
-                    int x = Mathf.FloorToInt(pointX);
-                    int y = Mathf.FloorToInt(pointY);
-                    int z = Mathf.FloorToInt(pointZ);
-
-                    if (currentWorld[x, y, z] == 0)
-                    {
-                        Debug.Log("Error, no block there");
-                        return;
-                    }
-
-                    //7 is bedrock
-                    if (currentWorld[x, y, z] == 7)
-                    {
-                        return;
-                    }
-
-                    placeBlockTag = currentWorld[x, y, z];
-                    return;
+                    placeBlockTag = selectTag;
                 }
             }
+           
         }
     }
 }

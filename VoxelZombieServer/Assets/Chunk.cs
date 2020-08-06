@@ -20,7 +20,18 @@ public class Chunk : MonoBehaviour
 
     public ChunkID ID;
 
+    private GameObject flower1;
+    private GameObject flower2;
+    private GameObject flower3;
+
+    private GameObject mushroom1;
+    private GameObject mushroom2;
+    private GameObject mushroom3;
+    private GameObject mushroom4;
+
     List<int>[] TriangleLists = new List<int>[55];
+
+    private Dictionary<Vector3, GameObject> modeledObjects = new Dictionary<Vector3, GameObject>();
     //0-48 are default MC ids offset back by 1 because 0 was air
     //49 is grass top
     //50 is wood top
@@ -218,7 +229,12 @@ public class Chunk : MonoBehaviour
     private List<int> _transparentBlockIDs = new List<int>
     {
         0, 9, 11, 18,
-        20, 44
+        20, 37, 38, 39, 40, 44, 57 ,61
+    };
+
+    private List<int> _modeledBlockIDs = new List<int>
+    {
+       37, 38, 39, 40, 57, 61
     };
 
     private void Start()
@@ -252,7 +268,14 @@ public class Chunk : MonoBehaviour
         waterMeshFilter = waterChunk.AddComponent<MeshFilter>();
         waterMeshCollider = waterChunk.AddComponent<MeshCollider>();
 
-       
+        flower1 = Resources.Load<GameObject>("Flower1");
+        flower2 = Resources.Load<GameObject>("Flower2");
+        flower3 = Resources.Load<GameObject>("Flower3");
+        mushroom1 = Resources.Load<GameObject>("Mushroom1");
+        mushroom2 = Resources.Load<GameObject>("Mushroom2");
+        mushroom3 = Resources.Load<GameObject>("Mushroom3");
+        mushroom4 = Resources.Load<GameObject>("Mushroom4");
+
 
     }
 
@@ -293,15 +316,55 @@ public class Chunk : MonoBehaviour
                     var voxelType = this[x, y, z];
                     // If it is air we ignore this block
                     if (voxelType == 0)
-                        continue;
-                    
-                    if(voxelType == 9)
                     {
-                       // GameObject waterPrefab = Resources.Load<GameObject>("WaterTop");
-                       // GameObject newWater = Instantiate(waterPrefab);
-                       // newWater.transform.parent = transform;
-                       // newWater.transform.localPosition = new Vector3(x + .5f, y + .5f, z + .5f);
-                     // continue;
+                        if (modeledObjects.ContainsKey(pos))
+                        {
+                            Destroy(modeledObjects[pos]);
+                            modeledObjects.Remove(pos);
+                        }
+                        continue;
+                    }
+
+                    if (_modeledBlockIDs.Contains(voxelType))
+                    {
+                        if (!modeledObjects.ContainsKey(pos))
+                        {
+                            GameObject newModel;
+                            switch(voxelType)
+                            {
+                                case 37:
+                                    newModel = Instantiate(flower1);
+                                    break;
+                                case 38:
+                                    newModel = Instantiate(flower2);                                                              
+                                    break;
+                                case 61:
+                                    newModel = Instantiate(flower3);
+                                    break;
+                                case 39:
+                                    newModel = Instantiate(mushroom1);
+                                    break;
+                                case 40:
+                                    newModel = Instantiate(mushroom2);
+                                    break;
+                                case 57:
+                                    newModel = Instantiate(mushroom4);
+                                    break;
+                                default:
+                                    Debug.Log("Block ID: " + voxelType + " not handled.");
+                                    continue;                            
+                            }
+                            newModel.transform.parent = transform;
+                            newModel.transform.localPosition = new Vector3(x + .5f, y, z + .5f);
+
+                            float yRot = (x * y * z) % 360;
+
+                            newModel.transform.eulerAngles = new Vector3(0, yRot, 0);                       
+                            modeledObjects.Add(pos, newModel);
+                        }
+                        
+
+                        continue;
                     }
 
                     if (normals.Count != vertices.Count)

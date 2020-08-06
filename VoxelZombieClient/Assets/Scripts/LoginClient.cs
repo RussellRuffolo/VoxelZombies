@@ -19,6 +19,7 @@ namespace Client
 
         public Canvas loginCanvas;
         public Canvas chatCanvas;
+
         private ClientChatManager cManager;
 
         // Start is called before the first frame update
@@ -49,7 +50,7 @@ namespace Client
                     {
                         cManager.enabled = true;
                         chatCanvas.enabled = true;
-                        Destroy(loginCanvas.gameObject); //login Canvas generated errors after being disabled
+                        Destroy(loginCanvas.gameObject); //login Canvas generated errors after being disabled                
                     }
                 }
             }
