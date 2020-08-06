@@ -9,6 +9,7 @@ TagManager:
   - WaterCanvas
   - Water
   - ChatCanvas
+  - Model
   layers:
   - Default
   - TransparentFX
@@ -18,7 +19,7 @@ TagManager:
   - UI
   - 
   - 
-  - 
+  - Model
   - 
   - 
   - 
