@@ -56,7 +56,7 @@ MonoBehaviour:
   gravAcceleration: 25
   verticalWaterSpeed: 1.5
   horizontalWaterSpeed: 1.5
-  waterExitSpeed: 5
+  waterExitSpeed: 8
   minimumX: -90
   maximumX: 90
   minimumY: -360

@@ -27,14 +27,16 @@ public class ServerPlayerManager : MonoBehaviour
     private int serverTickNumber = 0;
 
     VoxelServer vServer;
+    VoxelEngine vEngine;
 
 
     private void Awake()
     {
         vServer = GetComponent<VoxelServer>();
+        vEngine = GetComponent<VoxelEngine>();
     }
 
-    public void AddPlayer(ushort PlayerID, ushort stateTag, int xPos, int yPos, int zPos)
+    public void AddPlayer(ushort PlayerID, ushort stateTag, float xPos, float yPos, float zPos)
     {
         Vector3 spawnPosition = new Vector3((float)xPos, (float)yPos, (float)zPos);
 
@@ -93,7 +95,15 @@ public class ServerPlayerManager : MonoBehaviour
                     ApplyInputs(clientID, new PlayerInputs(moveVector, Jump));
 
                     //simulate one tick
-                    Physics.Simulate(Time.fixedDeltaTime);
+                    if(!vEngine.loadingMap)
+                    {
+                        Physics.Simulate(Time.fixedDeltaTime);
+                    }
+                    else
+                    {
+                        Debug.Log("Skipped tick due to map loading");
+                    }
+                  
 
                     //update the clients most recent tick
                     TickDic[clientID]++;
@@ -154,7 +164,7 @@ public class ServerPlayerManager : MonoBehaviour
         }
         else if (inputs.moveState == 1) //water movement
         {
-            if (inputs.Jump)
+            if (inputs.Jump && playerTransform.GetComponent<ServerPositionTracker>().CheckWaterJump())
             {
                 yVel = verticalWaterSpeed;
             }
@@ -170,7 +180,8 @@ public class ServerPlayerManager : MonoBehaviour
         {
             if(inputs.Jump && playerTransform.GetComponent<ServerPositionTracker>().CheckWaterJump())
             {
-                Vector3 waterJump = new Vector3(inputs.moveVector.x / 2, waterExitSpeed, inputs.moveVector.z / 2);
+                Debug.Log("Water Jump");
+                Vector3 waterJump = new Vector3(inputs.moveVector.x * horizontalWaterSpeed, waterExitSpeed, inputs.moveVector.z * horizontalWaterSpeed);
                 playerRB.velocity = waterJump;
             }
             else

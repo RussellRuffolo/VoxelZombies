@@ -323,6 +323,7 @@ GameObject:
   - component: {fileID: 7515232450456482889}
   - component: {fileID: 9075941747744549843}
   - component: {fileID: -6508129309111105946}
+  - component: {fileID: 6180642761821155138}
   m_Layer: 0
   m_Name: NetworkPlayerPrefab
   m_TagString: Untagged
@@ -403,3 +404,16 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: c1832d065f3f64947b5b374cbceed376, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
+--- !u!65 &6180642761821155138
+BoxCollider:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 8160126559506472237}
+  m_Material: {fileID: 13400000, guid: 3dfd38b862e744746bd7839034af3c6f, type: 2}
+  m_IsTrigger: 0
+  m_Enabled: 1
+  serializedVersion: 2
+  m_Size: {x: 0.708, y: 1.76, z: 0.708}
+  m_Center: {x: 0, y: -0.08, z: 0}

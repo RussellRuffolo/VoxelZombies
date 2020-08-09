@@ -227,7 +227,7 @@ namespace Client
             }
             else if (moveState == 1) //water movement
             {
-                if (currentInputs.Jump)
+                if (currentInputs.Jump && pTracker.CheckWaterJump())
                 {
                     yVel = verticalWaterSpeed;
                 }
@@ -243,7 +243,8 @@ namespace Client
             {
                 if(currentInputs.Jump && pTracker.CheckWaterJump())
                 {
-                    Vector3 waterJump = new Vector3(currentInputs.MoveVector.x / 2, waterExitSpeed, currentInputs.MoveVector.z / 2);
+                    Debug.Log("Water Jump");
+                    Vector3 waterJump = new Vector3(currentInputs.MoveVector.x * horizontalWaterSpeed, waterExitSpeed, currentInputs.MoveVector.z * horizontalWaterSpeed);
                     playerRB.velocity = waterJump;
                 }
                 else

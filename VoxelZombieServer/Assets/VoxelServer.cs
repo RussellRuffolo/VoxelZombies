@@ -54,6 +54,7 @@ public class VoxelServer : MonoBehaviour
         XMLServer.Server.ClientManager.ClientDisconnected += PlayerDisconnected;
     }
 
+    //When a player connects they are sent the current map to load
     void PlayerConnected(object sender, ClientConnectedEventArgs e)
     {        
         using (DarkRiftWriter mapWriter = DarkRiftWriter.Create())
@@ -126,11 +127,7 @@ public class VoxelServer : MonoBehaviour
            else if(e.Tag == BLOCK_EDIT_TAG)
            {
                 ApplyBlockEdit(e);
-           }
-           else if(e.Tag == MAP_LOADED_TAG)
-            {
-              //  InitializePlayer(e);
-            }
+           }          
            else if(e.Tag == MAP_RELOADED_TAG)
             {
                 ReInitializePlayer(e);
@@ -239,6 +236,9 @@ public class VoxelServer : MonoBehaviour
         }
     }
 
+
+   //If login is succesful then initialize player
+   //otherwise tell client unsuccesful so they can attempt again
     private void HandleLogin(MessageReceivedEventArgs e)
     {
         using (DarkRiftReader reader = e.GetMessage().GetReader())
@@ -261,6 +261,8 @@ public class VoxelServer : MonoBehaviour
                 SendPublicChat(playerNames[e.Client.ID] + " has joined the fray.", 2);
             }
             
+            //Tells the client if the login was succesful.
+            //If it was not the client is prepared to send another login attempt message
             using (DarkRiftWriter loginWriter = DarkRiftWriter.Create())
             {
                 loginWriter.Write(succesfulLogin);
@@ -276,11 +278,11 @@ public class VoxelServer : MonoBehaviour
         }
     }
 
+    //On succesful login player is initialized.
+    //New player is added to PlayerManager
+    //All players are told about new player
     private void InitializePlayer(MessageReceivedEventArgs e)
-    {   
-       
-        loadedPlayers.Add(e.Client);
-
+    {  
         ushort stateTag;
         if (gManager.inStartTime)
         {
@@ -292,16 +294,14 @@ public class VoxelServer : MonoBehaviour
         }
         PlayerManager.AddPlayer(e.Client.ID, stateTag, vEngine.currentMap.SpawnX, vEngine.currentMap.SpawnY, vEngine.currentMap.SpawnZ);
 
+        //This message is to the new player and tells them the ID, state, position, and name of every player
         using (DarkRiftWriter PlayerWriter = DarkRiftWriter.Create())
         {
 
-            PlayerWriter.Write(loadedPlayers.Count);
+            PlayerWriter.Write(PlayerManager.PlayerDictionary.Count);
             
-            foreach (IClient playerClient in loadedPlayers)
-            {
-                ushort playerID = playerClient.ID;
-
-
+            foreach (ushort playerID in PlayerManager.PlayerDictionary.Keys)
+            {                
                 Transform playerTransform = PlayerManager.PlayerDictionary[playerID];
 
                 PlayerWriter.Write(playerID);
@@ -326,10 +326,10 @@ public class VoxelServer : MonoBehaviour
 
         }
 
+        //This message is sent to every player besides the new one
+        //It contains all information about the new player
         using (DarkRiftWriter NewPlayerWriter = DarkRiftWriter.Create())
         {
-
-
             ushort playerID = e.Client.ID;
 
             Transform playerTransform = PlayerManager.PlayerDictionary[playerID];
@@ -349,7 +349,7 @@ public class VoxelServer : MonoBehaviour
 
             using (Message NewPlayerMessage = Message.Create(ADD_PLAYER_TAG, NewPlayerWriter))
             {
-                foreach (IClient c in loadedPlayers)
+                foreach (IClient c in XMLServer.Server.ClientManager.GetAllClients())
                 {
                     if (c.ID != e.Client.ID)
                     {
@@ -373,12 +373,9 @@ public class VoxelServer : MonoBehaviour
         
 
             using (Message blockEditMessage = Message.Create(BLOCK_EDIT_TAG, BlockEditsWriter))
-            {
-                foreach (IClient c in loadedPlayers)
-                {
-                    c.SendMessage(blockEditMessage, SendMode.Reliable);
-                    //Debug.Log("Sent Block Edit Message");
-                }
+            {             
+                e.Client.SendMessage(blockEditMessage, SendMode.Reliable);
+                //Debug.Log("Sent Block Edit Message");                
             }
         }
 
@@ -388,43 +385,89 @@ public class VoxelServer : MonoBehaviour
     private void ReInitializePlayer(MessageReceivedEventArgs e)
     {
 
-        loadedPlayers.Add(e.Client);
+        string mapLoaded = e.GetMessage().GetReader().ReadString();
 
-        Vector3 spawnPosition = new Vector3(vEngine.currentMap.SpawnX, vEngine.currentMap.SpawnY, vEngine.currentMap.SpawnZ);
-
-        foreach (ushort id in PlayerManager.PlayerDictionary.Keys)
+        if(mapLoaded == vEngine.currentMap.Name)
         {
-            using (DarkRiftWriter positionWriter = DarkRiftWriter.Create())
+            if(!loadedPlayers.Contains(e.Client))               
             {
-                positionWriter.Write(id);
-
-
-                PlayerManager.PlayerDictionary[id].position = spawnPosition;
-                Vector3 playerPosition = PlayerManager.PlayerDictionary[id].position;
-
-                Rigidbody rb = PlayerManager.PlayerDictionary[id].GetComponent<Rigidbody>();
-                rb.velocity = Vector3.zero;
-
-                positionWriter.Write(playerPosition.x);
-                positionWriter.Write(playerPosition.y);
-                positionWriter.Write(playerPosition.z);
-
-            
-                if(id != e.Client.ID)
-                {
-                    using (Message positionMessage = Message.Create(OTHER_POSITION_TAG, positionWriter))
-                    {
-                        e.Client.SendMessage(positionMessage, SendMode.Unreliable);
-                    }
-                }
-           
-                
-             
-
+                Debug.Log("re added player");
+                loadedPlayers.Add(e.Client);
             }
 
+            using (DarkRiftWriter BlockEditsWriter = DarkRiftWriter.Create())
+            {
+                foreach (BlockEdit bEdit in bEditor.EditedBlocks)
+                {
+                    BlockEditsWriter.Write(bEdit.x);
+                    BlockEditsWriter.Write(bEdit.y);
+                    BlockEditsWriter.Write(bEdit.z);
+                    BlockEditsWriter.Write(bEdit.blockTag);
+                }
+
+
+                using (Message blockEditMessage = Message.Create(BLOCK_EDIT_TAG, BlockEditsWriter))
+                {
+                    foreach (IClient c in loadedPlayers)
+                    {
+                        c.SendMessage(blockEditMessage, SendMode.Reliable);
+                        //Debug.Log("Sent Block Edit Message");
+                    }
+                }
+            }
         }
-        
+        else
+        {
+            using (DarkRiftWriter mapWriter = DarkRiftWriter.Create())
+            {
+                mapWriter.Write(vEngine.currentMap.Name);
+
+                using (Message mapMessage = Message.Create(MAP_TAG, mapWriter))
+                {
+                    e.Client.SendMessage(mapMessage, SendMode.Reliable);           
+                }
+            }
+        }
+
+
+
+
+
+        /*
+      Vector3 spawnPosition = new Vector3(vEngine.currentMap.SpawnX, vEngine.currentMap.SpawnY, vEngine.currentMap.SpawnZ);
+
+
+      foreach (ushort id in PlayerManager.PlayerDictionary.Keys)
+      {
+          using (DarkRiftWriter positionWriter = DarkRiftWriter.Create())
+          {
+              positionWriter.Write(id);
+
+
+              PlayerManager.PlayerDictionary[id].position = spawnPosition;
+              Vector3 playerPosition = PlayerManager.PlayerDictionary[id].position;
+
+              Rigidbody rb = PlayerManager.PlayerDictionary[id].GetComponent<Rigidbody>();
+              rb.velocity = Vector3.zero;
+
+              positionWriter.Write(playerPosition.x);
+              positionWriter.Write(playerPosition.y);
+              positionWriter.Write(playerPosition.z);
+
+
+              if(id != e.Client.ID)
+              {
+                  using (Message positionMessage = Message.Create(OTHER_POSITION_TAG, positionWriter))
+                  {
+                      e.Client.SendMessage(positionMessage, SendMode.Unreliable);
+                  }
+              }          
+
+          }
+          
+
+    }
+    */
 
     }
 

@@ -237,7 +237,7 @@ public class Chunk : MonoBehaviour
        37, 38, 39, 40, 57, 61
     };
 
-    private void Start()
+    public void init()
     {
         this.tag = "Ground";
         for (int i = 0; i < 55; i++)
@@ -472,7 +472,7 @@ public class Chunk : MonoBehaviour
                     else { top = this[x, y + 1, z]; }
                     if (top == 44)
                         top = 0;
-                    if (_transparentBlockIDs.Contains(top) && top != voxelType)
+                    if ((_transparentBlockIDs.Contains(top) && top != voxelType) || voxelType == 44)
                     {
                         if (voxelType == 9 || voxelType == 11)
                         {
@@ -790,7 +790,7 @@ public class Chunk : MonoBehaviour
                     {
                         if (voxelType == 9 || voxelType == 11)
                         {
-                            foreach (var vert in _backVertices)
+                            foreach (var vert in _bottomVertices)
                                 waterVertices.Add(pos + vert);
 
                             waterUVs.Add(new Vector2(0, 0));
@@ -802,14 +802,14 @@ public class Chunk : MonoBehaviour
                                 waterNormals.Add(normal);
                             if(voxelType == 9)
                             {
-                                foreach (var tri in _backTriangles)
+                                foreach (var tri in _bottomTriangles)
                                 {
                                     waterTriangles.Add(waterVertPos + tri);
                                 }
                             }
                             else
                             {
-                                foreach (var tri in _backTriangles)
+                                foreach (var tri in _bottomTriangles)
                                 {
                                     lavaTriangles.Add(waterVertPos + tri);
                                 }

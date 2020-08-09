@@ -23,6 +23,19 @@ public class HalfBlockDetector : MonoBehaviour
 
     public bool grounded = false;
 
+    private World world;
+
+    private List<int> _SteppableBlockIds = new List<int>
+    {
+       0,9,11
+    };
+
+
+    private void Awake()
+    {
+        world = GameObject.FindGameObjectWithTag("Network").GetComponent<ClientVoxelEngine>().world;
+    }
+
     void FixedUpdate()
     {
         Vector3 velocity = this.GetComponent<Rigidbody>().velocity;
@@ -49,8 +62,8 @@ public class HalfBlockDetector : MonoBehaviour
                 this.GetComponent<Rigidbody>().velocity = lastVelocity;
             }
 
-            
-        }        
+
+        }
         else
         {
             grounded = false;
@@ -60,7 +73,7 @@ public class HalfBlockDetector : MonoBehaviour
             steppingUp = false;
 
         }
-       
+
         allCPs.Clear();
         lastVelocity = velocity;
 
@@ -104,7 +117,7 @@ public class HalfBlockDetector : MonoBehaviour
         {
             //Pointing with some up direction
             if (cp.normal.y == 1)
-            {             
+            {
                 found = true;
             }
         }
@@ -127,7 +140,7 @@ public class HalfBlockDetector : MonoBehaviour
 
         foreach (ContactPoint cp in allCPs)
         {
-            bool test = ResolveStepUp(out stepUpOffset, cp, groundCP);
+            bool test = ResolveStepUp(out stepUpOffset, cp, groundCP, currVelocity);
             if (test)
                 return test;
         }
@@ -139,10 +152,12 @@ public class HalfBlockDetector : MonoBehaviour
     /// \param groundCP ContactPoint on the ground.
     /// \param stepUpOffset The offset from the stepTestCP.point to the stepUpPoint (to add to the player's position so they're now on the step)
     /// \return If the passed ContactPoint was a step
-    bool ResolveStepUp(out Vector3 stepUpOffset, ContactPoint stepTestCP, ContactPoint groundCP)
+    bool ResolveStepUp(out Vector3 stepUpOffset, ContactPoint stepTestCP, ContactPoint groundCP, Vector3 velocity)
     {
         stepUpOffset = default(Vector3);
         Collider stepCol = stepTestCP.otherCollider;
+
+
 
         //( 1 ) Check if the contact point normal matches that of a step (y close to 0)
         if (Mathf.Abs(stepTestCP.normal.y) >= 0.01f)
@@ -163,17 +178,52 @@ public class HalfBlockDetector : MonoBehaviour
         Vector3 stepTestInvDir = new Vector3(-stepTestCP.normal.x, 0, -stepTestCP.normal.z).normalized;
         Vector3 origin = new Vector3(stepTestCP.point.x, stepHeight, stepTestCP.point.z) + (stepTestInvDir * stepSearchOvershoot);
         Vector3 direction = Vector3.down;
-        if (!(stepCol.Raycast(new Ray(origin, direction), out hitInfo, maxStepHeight)))
+        if (!(Physics.Raycast(new Ray(origin, direction), out hitInfo, maxStepHeight)))
         {
+          
             return false;
+        }
+
+
+
+
+
+        RaycastHit newHit;
+        //( 4 ) Make sure nothing is in the way of that step
+        if (Physics.Raycast(new Ray(origin, Vector3.up), out newHit, 1.5f))
+        {
+            if (!newHit.collider.CompareTag("Player"))
+            {
+                return false;
+            }     
+           
         }
 
         //We have enough info to calculate the points
         Vector3 stepUpPoint = new Vector3(stepTestCP.point.x, hitInfo.point.y + 0.0001f, stepTestCP.point.z) + (stepTestInvDir * stepSearchOvershoot);
+
+        if (!(world[Mathf.FloorToInt(stepUpPoint.x), Mathf.FloorToInt(stepUpPoint.y), Mathf.FloorToInt(stepUpPoint.z)] == 44))
+        {
+            if (!(world[Mathf.FloorToInt(transform.position.x), Mathf.FloorToInt(transform.position.y - 1), Mathf.FloorToInt(transform.position.z)] == 44))
+            {
+              //  Debug.Log("Block id is: " + world[Mathf.FloorToInt(stepUpPoint.x), Mathf.FloorToInt(stepUpPoint.y), Mathf.FloorToInt(stepUpPoint.z)]);
+                return false;
+            }
+
+
+        }
+
+        if (!(_SteppableBlockIds.Contains(world[Mathf.FloorToInt(stepUpPoint.x), Mathf.FloorToInt(stepUpPoint.y + 1), Mathf.FloorToInt(stepUpPoint.z)]) && _SteppableBlockIds.Contains(world[Mathf.FloorToInt(stepUpPoint.x), Mathf.FloorToInt(stepUpPoint.y + 2), Mathf.FloorToInt(stepUpPoint.z)])))
+        {
+            //Debug.Log("Not air");
+            return false;
+        }
+
         Vector3 stepUpPointOffset = stepUpPoint - new Vector3(stepTestCP.point.x, groundCP.point.y, stepTestCP.point.z);
 
         //We passed all the checks! Calculate and return the point!
         stepUpOffset = stepUpPointOffset;
         return true;
+
     }
 }

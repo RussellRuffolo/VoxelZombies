@@ -469,6 +469,7 @@ MonoBehaviour:
   - {fileID: 2100000, guid: 49ce4ea21d987c1488f5f39bdf629582, type: 2}
   bController: {fileID: 1426511997}
   wEngine: {fileID: 0}
+  loadingMap: 0
 --- !u!114 &835489451
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -501,7 +502,7 @@ MonoBehaviour:
   gravAcceleration: 25
   horizontalWaterSpeed: 1.5
   verticalWaterSpeed: 1.5
-  waterExitSpeed: 5
+  waterExitSpeed: 8
 --- !u!114 &835489453
 MonoBehaviour:
   m_ObjectHideFlags: 0

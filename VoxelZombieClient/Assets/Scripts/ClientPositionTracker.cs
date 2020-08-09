@@ -19,22 +19,22 @@ namespace Client
             world = GameObject.FindGameObjectWithTag("Network").GetComponent<ClientVoxelEngine>().world;
             pController = GetComponent<ClientPlayerController>();
 
-            colliderHalfExtents = new Vector3(.708f / 2, .9f, .708f / 2);
+            colliderHalfExtents = new Vector3(.708f / 2, 1.76f / 2, .708f / 2);
         }
 
 
         public ushort CheckPlayerState(ushort lastState)
         {
 
-            Vector3 feetPosition = new Vector3(transform.position.x, transform.position.y - .75f, transform.position.z);
-            Vector3 headPosition = new Vector3(transform.position.x, transform.position.y - .75f, transform.position.z);
+            Vector3 feetPosition = new Vector3(transform.position.x, transform.position.y -.08f - (1.76f /2), transform.position.z);
+            Vector3 headPosition = new Vector3(transform.position.x, transform.position.y - .08f + (1.76f / 2), transform.position.z);
 
-            if (world[Mathf.FloorToInt(feetPosition.x), Mathf.FloorToInt(feetPosition.y), Mathf.FloorToInt(feetPosition.z)] == 9)
+            if (world[Mathf.FloorToInt(feetPosition.x), Mathf.FloorToInt(feetPosition.y + .2f), Mathf.FloorToInt(feetPosition.z)] == 9)
             {
                 hasWaterJump = true;
             }
 
-            Collider[] thingsHit = Physics.OverlapBox(transform.position + Vector3.down * .1f, colliderHalfExtents);
+            Collider[] thingsHit = Physics.OverlapBox(transform.position + Vector3.down * .08f, colliderHalfExtents);
 
             foreach(Collider col in thingsHit)
             {
@@ -53,6 +53,7 @@ namespace Client
                 if(lastMoveState == 1)
                 {
                     lastMoveState = 3;
+                    Debug.Log("Exit water");
                     return 3;
                 }
 

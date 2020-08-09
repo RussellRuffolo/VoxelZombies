@@ -20,65 +20,66 @@ public class VoxelEngine : MonoBehaviour
     public BoundaryController bController;
     public WaterEngine wEngine;
 
-    
+    public bool loadingMap = false;
   
     const ushort MAP_TAG = 4;
     private void Awake()
     {
-       MapData gurka = new MapData("gurka", 55, 42, 28);
+       MapData gurka = new MapData("gurka", 55, 42.5f, 28);
        mapList.Add(gurka);
 
-        MapData prison = new MapData("prison", 2, 100, 2);
+        MapData prison = new MapData("prison", 62, 1.5f, 62);
         mapList.Add(prison);
 
-        MapData stadium = new MapData("stadium", 112, 65, 65);
+        MapData stadium = new MapData("stadium", 112, 65.5f, 65);
         mapList.Add(stadium);
 
-       // MapData sewers = new MapData("sewers", 20, 57, 51);
-      //  mapList.Add(sewers);
- 
+        // MapData sewers = new MapData("sewers", 20, 57.5f, 51);
+        //  mapList.Add(sewers);
 
-       MapData excitebike = new MapData("excitebike", 24, 35, 36);
+
+        MapData excitebike = new MapData("excitebike", 24, 35.5f, 36);
        mapList.Add(excitebike);
 
-      //  MapData dwarves = new MapData("dwarves", 122, 2, 7);
-     //   mapList.Add(dwarves);
+        //  MapData dwarves = new MapData("dwarves", 122, 2.5f, 7);
+        //   mapList.Add(dwarves);
 
-      //  MapData diametric = new MapData("diametric", 46, 19, 26);
-      //  mapList.Add(diametric);
+        //  MapData diametric = new MapData("diametric", 46, 19.5f, 26);
+        //  mapList.Add(diametric);
 
-       // MapData asylum = new MapData("asylum",  25, 129, 30);
-      //  mapList.Add(asylum);
+        // MapData asylum = new MapData("asylum",  25, 129.5f, 30);
+        //  mapList.Add(asylum);
 
-        
 
-       // MapData Carson = new MapData("carson",  10, 35, 120);
-      //  mapList.Add(Carson);    
 
-       // MapData Sunspots = new MapData("Sunspots",  60, 112, 108);
-       // mapList.Add(Sunspots);
+        // MapData Carson = new MapData("carson",  10, 35.5f, 120);
+        //  mapList.Add(Carson);    
 
-       MapData hawaii = new MapData("hawaiiMod",  1, 67, 43);
+        // MapData Sunspots = new MapData("Sunspots",  60, 112.5f, 108);
+        // mapList.Add(Sunspots);
+
+        MapData hawaii = new MapData("hawaiiMod",  1, 67.5f, 43);
        mapList.Add(hawaii);
 
-     //   MapData colony = new MapData("colony", 56, 67, 8);
-      //  mapList.Add(colony);
+        //   MapData colony = new MapData("colony", 56, 67.5f, 8);
+        //  mapList.Add(colony);
 
-      //  MapData italy = new MapData("italy",  53, 89, 63);
-     //   mapList.Add(italy);
-     //   MapData swiss = new MapData("swiss",  29, 50, 12);
-      //  mapList.Add(swiss);
+        //  MapData italy = new MapData("italy",  53, 89.5f, 63);
+        //   mapList.Add(italy);
+        //   MapData swiss = new MapData("swiss",  29, 50.5f, 12);
+        //  mapList.Add(swiss);
 
-       // mapList.Add(hawaii);
+        // mapList.Add(hawaii);
     }
 
     public void LoadMap(MapData map)
-    {      
+    {
+        loadingMap = true;
         UnloadMap();
 
         currentMap = map;
-   
-        
+
+
         string fileName = Application.dataPath + "/StreamingAssets/" + map.Name + ".bin";
         BinaryReader binReader = new BinaryReader(new FileStream(fileName, FileMode.Open));
 
@@ -91,48 +92,55 @@ public class VoxelEngine : MonoBehaviour
         map.Height = height;
 
         bController.SetMapBoundaries(length, width, height);
-       
-       
+
+
         byte[] mapBytes = binReader.ReadBytes(length * width * height);
 
-        
-       string namePrefix = "Chunk ";
 
-       for (int z = 0; z < width / 16; z++)
-       {
-           for (int x = 0; x < length / 16; x++)
-           {
-               for (int y = 0; y < height / 16; y++)
-               {
-                   var newChunkObj = new GameObject(namePrefix + x.ToString() + "," + y.ToString() + "," + z.ToString());
-                   newChunkObj.transform.position = new Vector3(x * 16, y * 16, z * 16);
+        string namePrefix = "Chunk ";
+
+        for (int z = 0; z < width / 16; z++)
+        {
+            for (int x = 0; x < length / 16; x++)
+            {
+                for (int y = 0; y < height / 16; y++)
+                {
+                    var newChunkObj = new GameObject(namePrefix + x.ToString() + "," + y.ToString() + "," + z.ToString());
+                    newChunkObj.transform.position = new Vector3(x * 16, y * 16, z * 16);
 
 
-                   var chunk = newChunkObj.AddComponent<Chunk>();
-                   chunk.world = world;
-                   chunk.GetComponent<MeshRenderer>().materials = materialList.ToArray();
-                   ChunkID newID = new ChunkID(x, y, z);
-                   world.Chunks.Add(newID, chunk);
-                   chunk.ID = newID;
-               }
-           }
-       }
-       
+                    var chunk = newChunkObj.AddComponent<Chunk>();
+                    chunk.world = world;
+                    chunk.GetComponent<MeshRenderer>().materials = materialList.ToArray();
+                    ChunkID newID = new ChunkID(x, y, z);
+                    world.Chunks.Add(newID, chunk);
+                    chunk.ID = newID;
+                }
+            }
+        }
 
-       
+
+
         int blockCount = 0;
         for (int y = 0; y < height; y++)
         {
             for (int x = 0; x < length; x++)
             {
                 for (int z = 0; z < width; z++)
-                {               
+                {
                     world[x, y, z] = mapBytes[blockCount];
-                    blockCount++;                           
+                    blockCount++;
                 }
             }
         }
 
+        foreach (Chunk chunk in world.Chunks.Values)
+        {
+            chunk.init();
+            chunk.RenderToMesh();
+        }
+
+        loadingMap = false;
     }
 
     public  void UnloadMap()
@@ -168,15 +176,15 @@ public class MapData
     public string Name;
 
 
-    public int SpawnX;
-    public int SpawnY;
-    public int SpawnZ;
+    public float SpawnX;
+    public float SpawnY;
+    public float SpawnZ;
 
     public int Length;
     public int Width;
     public int Height;
 
-    public MapData(string name, int spawnX, int spawnY, int spawnZ)
+    public MapData(string name, float spawnX, float spawnY, float spawnZ)
     {
         Name = name;
       

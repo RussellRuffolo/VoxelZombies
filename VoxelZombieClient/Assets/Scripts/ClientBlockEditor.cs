@@ -292,8 +292,8 @@ namespace Client
                 currentPosition += backDirection * .01f;
                 distanceStepped += .01f;
 
-               
-                if(CheckBlock(currentPosition) == 0)
+                int block = CheckBlock(currentPosition);
+                if(block == 0)
                 {
                     int x = Mathf.FloorToInt(currentPosition.x);
                     int y = Mathf.FloorToInt(currentPosition.y);
@@ -333,6 +333,10 @@ namespace Client
                      
 
                 }
+                else if(block == 3)
+                {
+                    selectionNormal = Vector3.up;
+                }
                 
 
             }
@@ -349,6 +353,13 @@ namespace Client
             if (currentWorld[x, y, z] == 0 || currentWorld[x,y,z] == 9 || currentWorld[x,y,z] == 11)
             {
                 return 0;
+            }
+
+            //looking down on a halfblock
+            if (currentWorld[x, y, z] == 44 )
+            {
+                if(checkPosition.y - Mathf.Floor(checkPosition.y) > .5f)
+                return 3;
             }
 
             //modeled blocks: flowers, mushorooms

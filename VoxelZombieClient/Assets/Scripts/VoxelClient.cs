@@ -127,12 +127,14 @@ namespace Client
 
         void LoadMap(MessageReceivedEventArgs e)
         {
+            string mapName = "";
             using (Message message = e.GetMessage() as Message)
             {
 
                 using (DarkRiftReader reader = message.GetReader())
                 {            
                     string MapName = reader.ReadString();
+                    mapName = MapName;
 
                     vEngine.LoadMap(MapName);
                 }
@@ -140,23 +142,19 @@ namespace Client
 
             }
 
-            if (!loadedFirstMap)
-            {        
-                loadedFirstMap = true;
-            }
-            else
+         
+            using (DarkRiftWriter reloadedWriter = DarkRiftWriter.Create())
             {
-                using (DarkRiftWriter reloadedWriter = DarkRiftWriter.Create())
+                reloadedWriter.Write(mapName);
+                using (Message MapReloadedMessage = Message.Create(Tags.MAP_RELOADED_TAG, reloadedWriter))
                 {
-                    using (Message MapReloadedMessage = Message.Create(Tags.MAP_RELOADED_TAG, reloadedWriter))
-                    {
-                        Client.SendMessage(MapReloadedMessage, SendMode.Reliable);
-                        Debug.Log("Sent map reloaded message");
+                    Client.SendMessage(MapReloadedMessage, SendMode.Reliable);
+                    Debug.Log("Sent map reloaded message");
 
-                    }
                 }
-
             }
+
+            
 
 
         }
@@ -205,22 +203,26 @@ namespace Client
                         }
                         else
                         {
-                            Debug.Log("Spawn Network Player");
-                            GameObject NetworkPlayer = GameObject.Instantiate(NetworkPlayerPrefab,
-                                         position, Quaternion.Euler(eulerRotation.x, eulerRotation.y, eulerRotation.z));
-
-                            NetworkPlayer.GetComponentInChildren<NameTagManager>().SetName(playerName);
-
-                            if (StateTag == 0)
+                            if(!NetworkPlayerDictionary.ContainsKey(PlayerID))
                             {
-                                NetworkPlayer.GetComponent<MeshRenderer>().material.color = Color.white;
-                            }
-                            else
-                            {
-                                NetworkPlayer.GetComponent<MeshRenderer>().material.color = Color.red;
-                            }
+                                Debug.Log("Spawn Network Player");
+                                GameObject NetworkPlayer = GameObject.Instantiate(NetworkPlayerPrefab,
+                                             position, Quaternion.Euler(eulerRotation.x, eulerRotation.y, eulerRotation.z));
 
-                            NetworkPlayerDictionary.Add(PlayerID, NetworkPlayer.transform);
+                                NetworkPlayer.GetComponentInChildren<NameTagManager>().SetName(playerName);
+
+                                if (StateTag == 0)
+                                {
+                                    NetworkPlayer.GetComponent<MeshRenderer>().material.color = Color.white;
+                                }
+                                else
+                                {
+                                    NetworkPlayer.GetComponent<MeshRenderer>().material.color = Color.red;
+                                }
+
+                                NetworkPlayerDictionary.Add(PlayerID, NetworkPlayer.transform);
+                            }
+                    
                         }
 
                         foreach(Transform netplayerTransform in NetworkPlayerDictionary.Values)
@@ -242,35 +244,37 @@ namespace Client
                 {
                     ushort PlayerID = reader.ReadUInt16();
 
-
-                    Vector3 position = new Vector3(reader.ReadSingle(),
-                                       reader.ReadSingle(), reader.ReadSingle());
-
-                    Vector3 eulerRotation = new Vector3(reader.ReadSingle(),
-                                            reader.ReadSingle(), reader.ReadSingle());
-
-                    ushort stateTag = reader.ReadUInt16();
-
-                    string playerName = reader.ReadString();
-
-                    GameObject NetworkPlayer = GameObject.Instantiate(NetworkPlayerPrefab,
-                                    position, Quaternion.Euler(eulerRotation.x, eulerRotation.y, eulerRotation.z));
-                    NetworkPlayer.GetComponentInChildren<NameTagManager>().SetName(playerName);
-                    NetworkPlayer.GetComponentInChildren<NameTagManager>().SetPlayerTransform(localPlayerTransform);
-
-                    Color newColor;
-
-                    if (stateTag == 0)
+                    if(!NetworkPlayerDictionary.ContainsKey(PlayerID))
                     {
-                        newColor = Color.white;
-                    }
-                    else
-                    {
-                        newColor = Color.red;
-                    }
+                        Vector3 position = new Vector3(reader.ReadSingle(),
+                                      reader.ReadSingle(), reader.ReadSingle());
 
-                    NetworkPlayer.GetComponent<MeshRenderer>().material.color = newColor;
-                    NetworkPlayerDictionary.Add(PlayerID, NetworkPlayer.transform);
+                        Vector3 eulerRotation = new Vector3(reader.ReadSingle(),
+                                                reader.ReadSingle(), reader.ReadSingle());
+
+                        ushort stateTag = reader.ReadUInt16();
+
+                        string playerName = reader.ReadString();
+
+                        GameObject NetworkPlayer = GameObject.Instantiate(NetworkPlayerPrefab,
+                                        position, Quaternion.Euler(eulerRotation.x, eulerRotation.y, eulerRotation.z));
+                        NetworkPlayer.GetComponentInChildren<NameTagManager>().SetName(playerName);
+                        NetworkPlayer.GetComponentInChildren<NameTagManager>().SetPlayerTransform(localPlayerTransform);
+
+                        Color newColor;
+
+                        if (stateTag == 0)
+                        {
+                            newColor = Color.white;
+                        }
+                        else
+                        {
+                            newColor = Color.red;
+                        }
+
+                        NetworkPlayer.GetComponent<MeshRenderer>().material.color = newColor;
+                        NetworkPlayerDictionary.Add(PlayerID, NetworkPlayer.transform);
+                    }                   
 
                 }
             }
