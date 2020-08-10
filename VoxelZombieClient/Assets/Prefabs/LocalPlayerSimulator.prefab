@@ -54,9 +54,10 @@ MonoBehaviour:
   AirAcceleration: 8.5
   jumpSpeed: 8
   gravAcceleration: 25
-  verticalWaterSpeed: 1.5
+  verticalWaterMaxSpeed: 1.5
+  verticalWaterAcceleration: 35
   horizontalWaterSpeed: 1.5
-  waterExitSpeed: 8
+  waterExitSpeed: 5
   minimumX: -90
   maximumX: 90
   minimumY: -360

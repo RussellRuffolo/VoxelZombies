@@ -15,7 +15,8 @@ namespace Client
         public float AirAcceleration;
         public float jumpSpeed;
         public float gravAcceleration;
-        public float verticalWaterSpeed;
+        public float verticalWaterMaxSpeed;
+        public float verticalWaterAcceleration;
         public float horizontalWaterSpeed;
         public float waterExitSpeed;
 
@@ -41,6 +42,7 @@ namespace Client
         ClientChatManager chatClient;
         HalfBlockDetector hbDetector;
         ClientPositionTracker pTracker;
+        public ClientCameraController camController;
 
         ClientInputs[] LoggedInputs = new ClientInputs[1024];
         PlayerState[] LoggedStates = new PlayerState[1024];
@@ -135,11 +137,13 @@ namespace Client
 
         void GetMouseRotation()
         {
-            if(Cursor.lockState == CursorLockMode.Locked)
-            {
-                rotationY += Input.GetAxis("Mouse X") * sensitivityX;
-                rotationTracker.transform.eulerAngles = new Vector3(0, rotationY, 0);
-            }
+         //   if(Cursor.lockState == CursorLockMode.Locked)
+          //  {
+                //rotationY += Input.GetAxis("Mouse X") * sensitivityX;
+                // rotationTracker.transform.eulerAngles = new Vector3(0, rotationY, 0);
+                rotationY = camController.rotationY;
+            rotationTracker.transform.eulerAngles = new Vector3(0, rotationY, 0);
+            //  }
         }        
 
         //samples user input to creat the ClientInputs object for this tick
@@ -227,13 +231,35 @@ namespace Client
             }
             else if (moveState == 1) //water movement
             {
-                if (currentInputs.Jump && pTracker.CheckWaterJump())
+                if (currentInputs.Jump)
                 {
-                    yVel = verticalWaterSpeed;
+                    if (yVel >= verticalWaterMaxSpeed)
+                    {
+                        yVel = verticalWaterMaxSpeed;
+                    }
+                    else
+                    {
+                        yVel += verticalWaterAcceleration * Time.fixedDeltaTime;
+                    }
                 }
                 else
                 {
-                    yVel = -verticalWaterSpeed;
+                    if (yVel < -verticalWaterMaxSpeed)
+                    {
+                        yVel += verticalWaterAcceleration * Time.fixedDeltaTime;
+                        if (yVel > -verticalWaterMaxSpeed)
+                        {
+                            yVel = -verticalWaterMaxSpeed;
+                        }
+                    }
+                    else
+                    {
+                        yVel -= verticalWaterAcceleration * Time.fixedDeltaTime;
+                        if (yVel < -verticalWaterMaxSpeed)
+                        {
+                            yVel = -verticalWaterMaxSpeed;
+                        }
+                    }
                 }
 
                 playerRB.velocity = currentInputs.MoveVector * horizontalWaterSpeed;
@@ -244,6 +270,7 @@ namespace Client
                 if(currentInputs.Jump && pTracker.CheckWaterJump())
                 {
                     Debug.Log("Water Jump");
+                    pTracker.UseWaterJump();
                     Vector3 waterJump = new Vector3(currentInputs.MoveVector.x * horizontalWaterSpeed, waterExitSpeed, currentInputs.MoveVector.z * horizontalWaterSpeed);
                     playerRB.velocity = waterJump;
                 }

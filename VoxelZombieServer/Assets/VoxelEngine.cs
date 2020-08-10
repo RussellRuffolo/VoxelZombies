@@ -31,8 +31,8 @@ public class VoxelEngine : MonoBehaviour
         MapData prison = new MapData("prison", 62, 1.5f, 62);
         mapList.Add(prison);
 
-        MapData stadium = new MapData("stadium", 112, 65.5f, 65);
-        mapList.Add(stadium);
+       // MapData stadium = new MapData("stadium", 112, 65.5f, 65);
+      //  mapList.Add(stadium);
 
         // MapData sewers = new MapData("sewers", 20, 57.5f, 51);
         //  mapList.Add(sewers);
@@ -47,8 +47,8 @@ public class VoxelEngine : MonoBehaviour
         //  MapData diametric = new MapData("diametric", 46, 19.5f, 26);
         //  mapList.Add(diametric);
 
-        // MapData asylum = new MapData("asylum",  25, 129.5f, 30);
-        //  mapList.Add(asylum);
+         MapData asylum = new MapData("asylum",  25, 129.5f, 30);
+          mapList.Add(asylum);
 
 
 
@@ -66,8 +66,11 @@ public class VoxelEngine : MonoBehaviour
 
         //  MapData italy = new MapData("italy",  53, 89.5f, 63);
         //   mapList.Add(italy);
-        //   MapData swiss = new MapData("swiss",  29, 50.5f, 12);
-        //  mapList.Add(swiss);
+           MapData swiss = new MapData("swiss",  29, 50.5f, 12);
+          mapList.Add(swiss);
+
+        MapData swordbase = new MapData("swordbase", 46.5f, 8, 56);
+        mapList.Add(swordbase);
 
         // mapList.Add(hawaii);
     }

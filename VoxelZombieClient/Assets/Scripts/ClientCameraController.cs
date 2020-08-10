@@ -14,7 +14,7 @@ public class ClientCameraController : MonoBehaviour
     public float sensitivityX = 5f;
     public float sensitivityY = 5f;
 
-    private float rotationY = 0f;
+    public float rotationY = 0f;
     private float rotationX = 0f;
 
 

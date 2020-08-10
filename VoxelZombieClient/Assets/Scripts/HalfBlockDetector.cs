@@ -213,7 +213,7 @@ public class HalfBlockDetector : MonoBehaviour
 
         }
 
-        if (!(_SteppableBlockIds.Contains(world[Mathf.FloorToInt(stepUpPoint.x), Mathf.FloorToInt(stepUpPoint.y + 1), Mathf.FloorToInt(stepUpPoint.z)]) && _SteppableBlockIds.Contains(world[Mathf.FloorToInt(stepUpPoint.x), Mathf.FloorToInt(stepUpPoint.y + 2), Mathf.FloorToInt(stepUpPoint.z)])))
+        if (!(_SteppableBlockIds.Contains(world[Mathf.FloorToInt(stepUpPoint.x), Mathf.FloorToInt(stepUpPoint.y + 1), Mathf.FloorToInt(stepUpPoint.z)]) && _SteppableBlockIds.Contains(world[Mathf.FloorToInt(stepUpPoint.x), Mathf.FloorToInt(stepUpPoint.y + 1.4f), Mathf.FloorToInt(stepUpPoint.z)])))
         {
             //Debug.Log("Not air");
             return false;

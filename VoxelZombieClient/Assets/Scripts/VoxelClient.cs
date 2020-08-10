@@ -190,6 +190,7 @@ namespace Client
                                          position, Quaternion.Euler(eulerRotation.x, eulerRotation.y, eulerRotation.z));
 
                             LocalPlayer.GetComponent<ClientCameraController>().LocalPlayerSim = LocalPlayerSim.transform;
+                            LocalPlayerSim.GetComponent<ClientPlayerController>().camController = LocalPlayer.GetComponent<ClientCameraController>();
                             if (StateTag == 0)
                             {
                                 LocalPlayer.GetComponent<MeshRenderer>().material.color = Color.white;

@@ -74,12 +74,17 @@ namespace Client
         {
             if (hasWaterJump)
             {
-                hasWaterJump = false;
+                
                 return true;
             }
 
             return false;
 
+        }
+
+        public void UseWaterJump()
+        {
+            hasWaterJump = false;
         }
     }
 

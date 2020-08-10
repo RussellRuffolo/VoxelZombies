@@ -501,8 +501,9 @@ MonoBehaviour:
   JumpSpeed: 8
   gravAcceleration: 25
   horizontalWaterSpeed: 1.5
-  verticalWaterSpeed: 1.5
-  waterExitSpeed: 8
+  verticalWaterMaxSpeed: 1.5
+  verticalWaterAcceleration: 35
+  waterExitSpeed: 5
 --- !u!114 &835489453
 MonoBehaviour:
   m_ObjectHideFlags: 0

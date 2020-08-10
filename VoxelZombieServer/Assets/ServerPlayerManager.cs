@@ -20,7 +20,8 @@ public class ServerPlayerManager : MonoBehaviour
     public float gravAcceleration;
 
     public float horizontalWaterSpeed;
-    public float verticalWaterSpeed;
+    public float verticalWaterMaxSpeed;
+    public float verticalWaterAcceleration;
 
     public float waterExitSpeed;
 
@@ -164,13 +165,35 @@ public class ServerPlayerManager : MonoBehaviour
         }
         else if (inputs.moveState == 1) //water movement
         {
-            if (inputs.Jump && playerTransform.GetComponent<ServerPositionTracker>().CheckWaterJump())
+            if (inputs.Jump)
             {
-                yVel = verticalWaterSpeed;
+                if(yVel >= verticalWaterMaxSpeed)
+                {
+                    yVel = verticalWaterMaxSpeed;
+                }
+                else
+                {
+                    yVel += verticalWaterAcceleration * Time.fixedDeltaTime;
+                }
             }
             else
             {
-                yVel = -verticalWaterSpeed;
+                if(yVel < -verticalWaterMaxSpeed)
+                {
+                    yVel += verticalWaterAcceleration * Time.fixedDeltaTime;
+                    if(yVel > -verticalWaterMaxSpeed)
+                    {
+                        yVel = -verticalWaterMaxSpeed;
+                    }
+                }
+                else
+                {
+                    yVel -= verticalWaterAcceleration * Time.fixedDeltaTime;
+                    if(yVel < -verticalWaterMaxSpeed)
+                    {
+                        yVel = -verticalWaterMaxSpeed;
+                    }
+                }
             }
 
             playerRB.velocity = inputs.moveVector * horizontalWaterSpeed;
@@ -181,6 +204,7 @@ public class ServerPlayerManager : MonoBehaviour
             if(inputs.Jump && playerTransform.GetComponent<ServerPositionTracker>().CheckWaterJump())
             {
                 Debug.Log("Water Jump");
+                playerTransform.GetComponent<ServerPositionTracker>().UseWaterJump();
                 Vector3 waterJump = new Vector3(inputs.moveVector.x * horizontalWaterSpeed, waterExitSpeed, inputs.moveVector.z * horizontalWaterSpeed);
                 playerRB.velocity = waterJump;
             }

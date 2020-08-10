@@ -118,12 +118,16 @@ public class ServerPositionTracker : MonoBehaviour
     public bool CheckWaterJump()
     {
         if(hasWaterJump)
-        {
-            hasWaterJump = false;
+        {           
             return true;
         }
 
         return false;
 
+    }
+
+    public void UseWaterJump()
+    {
+        hasWaterJump = false;
     }
 }
