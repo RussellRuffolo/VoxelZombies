@@ -50,7 +50,14 @@ public class VoxelEngine : MonoBehaviour
          MapData asylum = new MapData("asylum",  25, 129.5f, 30);
           mapList.Add(asylum);
 
+        MapData a_reverie = new MapData("a_reverie", 25, 129.5f, 30);
+        mapList.Add(a_reverie);
 
+        MapData pandoras_box = new MapData("pandoras_box", 25, 129.5f, 30);
+        mapList.Add(asylum);
+
+        MapData tsunami = new MapData("tsunami", 25, 129.5f, 30);
+        mapList.Add(tsunami);
 
         // MapData Carson = new MapData("carson",  10, 35.5f, 120);
         //  mapList.Add(Carson);    
