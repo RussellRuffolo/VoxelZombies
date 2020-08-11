@@ -25,8 +25,8 @@ public class VoxelEngine : MonoBehaviour
     const ushort MAP_TAG = 4;
     private void Awake()
     {
-       MapData gurka = new MapData("gurka", 55, 42.5f, 28);
-       mapList.Add(gurka);
+    //   MapData gurka = new MapData("gurka", 55, 42.5f, 28);
+    //   mapList.Add(gurka);
 
         MapData prison = new MapData("prison", 62, 1.5f, 62);
         mapList.Add(prison);
@@ -50,14 +50,23 @@ public class VoxelEngine : MonoBehaviour
          MapData asylum = new MapData("asylum",  25, 129.5f, 30);
           mapList.Add(asylum);
 
-        MapData a_reverie = new MapData("a_reverie", 123, 3, 125);
-        mapList.Add(a_reverie);
+        MapData domti = new MapData("domti", 25, 129.5f, 30);
+        mapList.Add(domti);
+
+        MapData excavation = new MapData("excavation", 25, 129.5f, 30);
+        mapList.Add(excavation);
+
+        MapData fortress = new MapData("fortress", 60, 132, 32);
+        mapList.Add(fortress);
+
+        //        MapData a_reverie = new MapData("a_reverie", 123, 3, 125);
+        //      mapList.Add(a_reverie);
 
         MapData pandoras_box = new MapData("pandoras_box", 25, 129.5f, 30);
-        mapList.Add(asylum);
+        mapList.Add(pandoras_box);
 
-        MapData tsunami = new MapData("tsunami", 25, 129.5f, 30);
-        mapList.Add(tsunami);
+       // MapData tsunami = new MapData("tsunami", 25, 129.5f, 30);
+     //   mapList.Add(tsunami);
 
         // MapData Carson = new MapData("carson",  10, 35.5f, 120);
         //  mapList.Add(Carson);    
