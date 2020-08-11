@@ -199,6 +199,7 @@ namespace Client
                             {
                                 LocalPlayer.GetComponent<MeshRenderer>().material.color = Color.red;
                             }
+                            chatManager.SetInputColor(StateTag);
                             localPlayerTransform = LocalPlayer.transform;
                             localSimTransform = LocalPlayerSim.transform;
                         }

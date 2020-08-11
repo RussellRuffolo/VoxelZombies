@@ -50,7 +50,7 @@ public class VoxelEngine : MonoBehaviour
          MapData asylum = new MapData("asylum",  25, 129.5f, 30);
           mapList.Add(asylum);
 
-        MapData a_reverie = new MapData("a_reverie", 25, 129.5f, 30);
+        MapData a_reverie = new MapData("a_reverie", 123, 3, 125);
         mapList.Add(a_reverie);
 
         MapData pandoras_box = new MapData("pandoras_box", 25, 129.5f, 30);
@@ -76,7 +76,7 @@ public class VoxelEngine : MonoBehaviour
            MapData swiss = new MapData("swiss",  29, 50.5f, 12);
           mapList.Add(swiss);
 
-        MapData swordbase = new MapData("swordbase", 46.5f, 8, 56);
+        MapData swordbase = new MapData("swordbase", 56, 20, 4);
         mapList.Add(swordbase);
 
         // mapList.Add(hawaii);

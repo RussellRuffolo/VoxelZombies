@@ -182,8 +182,38 @@ public class VoxelServer : MonoBehaviour
                             }
                         }
                         break;
+                    case "/message":
+                        if(commands.Length > 2)
+                        {
+                            string playerName = commands[1];
+                            if(playerNames.ContainsValue(playerName))
+                            {
+                                ushort targetID = GetIDFromName(playerName);
+                                string message = "";
+                                for(int i = 2; i < commands.Length; i++)
+                                {
+                                    message += commands[i];
+                                    message += " ";
+                                }
+
+                                SendPrivateChat("From: " + playerNames[e.Client.ID] + ": " + message, colorTag, targetID);
+                                SendPrivateChat("To: " + playerNames[targetID] + ": " + message, colorTag, e.Client.ID);
+                            }
+                            else
+                            {
+                                SendPrivateChat("Player: " + playerName + " not found.", 2, e.Client.ID);
+                            }
+                        }
+                        else
+                        {
+                            SendPrivateChat("Improper format, use: /message [player] [message]", 2, e.Client.ID);
+                        }
+                        break;
+                    case "/commands":
+                        SendPrivateChat("The available commands are: /vote, and /message", 2, e.Client.ID);
+                        break;
                     default:
-                        SendPrivateChat("The command: " + commands[0] + " does not exist", 2, e.Client.ID);
+                        SendPrivateChat("The command: " + commands[0] + " does not exist. Use /commands to see available commands.", 2, e.Client.ID);
                         break;
                 }
                 
@@ -197,6 +227,19 @@ public class VoxelServer : MonoBehaviour
 
         
         }
+    }
+
+    public ushort GetIDFromName(string playerName)
+    {
+        foreach(ushort key in playerNames.Keys)
+        {
+            if(playerNames[key] == playerName)
+            {
+                return key;
+            }
+        }
+
+        return 1000;
     }
 
     public void SendPublicChat(string chatMessage, ushort colorTag)

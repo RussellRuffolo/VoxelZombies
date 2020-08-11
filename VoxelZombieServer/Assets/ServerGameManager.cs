@@ -176,7 +176,7 @@ public class ServerGameManager : MonoBehaviour
         }
         else
         {
-            vServer.SendPublicChat("Not enough players to start a round.", 2);
+            Debug.Log("Not enough players to start a round.");
             StartCoroutine(startDelay());
         }
      

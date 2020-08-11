@@ -28,6 +28,8 @@ namespace Client
 
         private int chatsDisplayed = 0;
 
+        private string inputMessage = "";
+
         void Awake()
         {
             vClient = GetComponent<VoxelClient>();
@@ -43,40 +45,50 @@ namespace Client
         {
 
             if (chatEnabled)
-            {
-                if (Input.GetKeyDown(KeyCode.Return))
+            {         
+           
+                string newInput = Input.inputString;
+
+                foreach(char c in Input.inputString)
                 {
-                    string inputMessage = inputText.text;
-                    inputText.text = "";
-                    if (inputMessage != "")
-                    {        
-                        //send message to server here
-                        vClient.SendChatMessage(inputMessage, playerState);
+                    //If char is backspace character remove one character.
+                    if(c == '\b')
+                    {
+                        if(inputMessage.Length != 0)
+                        {
+                            inputMessage = inputMessage.Substring(0, inputMessage.Length - 1);                      
+                        }
                     }
+                    else if ((c == '\n') || (c == '\r')) // enter/return
+                    {
+                        string newMessage = inputMessage;
+                        inputMessage = "";
+                        inputText.text = "";
+                        Debug.Log("New message is: " + newMessage);
+                        if (newMessage != "")
+                        {
+                            //send message to server here
+                            vClient.SendChatMessage(newMessage, playerState);
+                        }
 
+                        inputPanel.enabled = false;
+                        chatEnabled = false;
+                        UpdateDisplayedChats();
                     
-                    UpdateDisplayedChats();
-                    inputPanel.enabled = false;
-                
-                    chatEnabled = false;
-
-
+                    }
+                    else
+                    {                        
+                       inputMessage += c;              
+                    
+                    }
                 }
-                else if(Input.GetKeyDown(KeyCode.Backspace) || Input.GetKey(KeyCode.Backspace))
-                {                    
-                    string toShorten = inputText.text;
-                    if(toShorten.Length > 0)
-                    {                   
-                        inputText.text = toShorten.Substring(0, toShorten.Length - 1);
-                    }                  
-
-                }
-                else
+                inputText.text = inputMessage;
+          
+                while (CalculateLengthOfMessage(inputText.text, inputText) > 300)
                 {
-                    string newInput = Input.inputString;
-                    inputText.text += newInput;
+                    inputText.text = inputText.text.Remove(0, 1);
                 }
-
+              
 
             }
             else
@@ -85,20 +97,30 @@ namespace Client
                 if (Input.GetKeyDown(KeyCode.T) || Input.GetKeyDown(KeyCode.Return))
                 {
                     chatEnabled = true;                  
-                    inputPanel.enabled = true;
-
-                    logPanel.GetComponent<RectTransform>().SetSizeWithCurrentAnchors(RectTransform.Axis.Vertical, 220);
+                    inputPanel.enabled = true;                    
                     logPanel.enabled = true;
 
                     for (int i = 0; i < DisplayedLogs.Length; i++)
                     {
                         DisplayedLogs[i].enabled = true;
                     }
+                    UpdateDisplayedChats();
 
                 }
             }
 
 
+        }
+
+        public void CloseChat()
+        {
+            inputText.text = "";
+            inputMessage = "";
+
+            inputPanel.enabled = false;
+            chatEnabled = false;
+            UpdateDisplayedChats();
+                      
         }
 
         public void DisplayMessage(string newMessage, ushort colorTag)
@@ -122,15 +144,28 @@ namespace Client
 
             }
 
-            VoxelMessage message = new VoxelMessage(newMessage, messageColor);
-     
+         
+            float messageLength = CalculateLengthOfMessage(newMessage, DisplayedLogs[0]);
+            
+            int numLines = Mathf.FloorToInt(messageLength / 300) + 1;
+
+            Debug.Log("Message Length: " + messageLength + " For message: " + newMessage + " Gives num lines: " + numLines);
+
+            VoxelMessage message = new VoxelMessage(newMessage, messageColor, numLines);
+
 
             chatLog.Insert(0, message);
 
+            int chatHeight = 0;
             for (int i = 0; i < DisplayedLogs.Length && i < chatLog.Count; i++)
             {
-                DisplayedLogs[i].text = chatLog[i].text;
+             
+                DisplayedLogs[i].text = chatLog[i].text;                
                 DisplayedLogs[i].color = chatLog[i].color;
+                int messageHeight = 15 * chatLog[i].numLines;
+                DisplayedLogs[i].rectTransform.SetSizeWithCurrentAnchors(RectTransform.Axis.Vertical, messageHeight);
+                DisplayedLogs[i].rectTransform.anchoredPosition = new Vector2(DisplayedLogs[i].rectTransform.anchoredPosition.x, chatHeight);
+                chatHeight += messageHeight;
             }
 
             chatsDisplayed++;
@@ -141,23 +176,76 @@ namespace Client
         
         }
 
+        float CalculateLengthOfMessage(string message, Text chatText)
+        {
+            float totalLength = 0;
+
+            Font myFont = chatText.font;  
+            CharacterInfo characterInfo = new CharacterInfo();
+
+            char[] arr = message.ToCharArray();
+
+            foreach (char c in arr)
+            {
+                myFont.GetCharacterInfo(c, out characterInfo, chatText.fontSize);
+
+                totalLength += characterInfo.advance;
+            }
+            totalLength = totalLength * chatCanvas.GetComponent<Canvas>().scaleFactor;
+            return totalLength;
+        }
+
+        string AddNewLines(string message, Text chatText)
+        {
+            string newMessage = "";
+
+            int length = 0;
+
+            Font myFont = chatText.font;  //chatText is my Text component
+            CharacterInfo characterInfo = new CharacterInfo();
+
+            char[] arr = message.ToCharArray();
+
+            for(int i = 0; i < arr.Length; i++)
+            {
+                myFont.GetCharacterInfo(arr[i], out characterInfo, chatText.fontSize);
+
+                length += characterInfo.advance;
+
+                if(length > 300)
+                {
+                    length -= 300;
+                    newMessage += '\n';
+                }
+                newMessage += arr[i];
+            }
+
+            return newMessage;
+        }
+
         public void UpdateDisplayedChats()
         {
-        
-            logPanel.enabled = true;
-
-            for (int i = 0; i < chatsDisplayed; i++)
+            if(chatEnabled == false)
             {
-                DisplayedLogs[i].enabled = true;
-            }
-            for (int i = chatsDisplayed; i < DisplayedLogs.Length; i++)
-            {
-                DisplayedLogs[i].enabled = false;
+                int chatHeight = 0;
+                logPanel.enabled = true;
+
+                for (int i = 0; i < chatsDisplayed; i++)
+                {
+                    DisplayedLogs[i].enabled = true;
+                    DisplayedLogs[i].rectTransform.anchoredPosition = new Vector2(DisplayedLogs[i].rectTransform.anchoredPosition.x, chatHeight);
+                    chatHeight += chatLog[i].numLines * 15;
+                }
+                for (int i = chatsDisplayed; i < DisplayedLogs.Length; i++)
+                {
+                    DisplayedLogs[i].enabled = false;
+                }
+
+                logPanel.GetComponent<RectTransform>().SetSizeWithCurrentAnchors(RectTransform.Axis.Vertical, chatHeight);
             }
 
-            logPanel.GetComponent<RectTransform>().SetSizeWithCurrentAnchors(RectTransform.Axis.Vertical, 20 * chatsDisplayed);
             
-            
+          
         }
 
         IEnumerator ChatDelay()
@@ -199,11 +287,13 @@ namespace Client
     {
         public string text;
         public Color color;
+        public int numLines;
 
-        public VoxelMessage(string messageText, Color messageColor)
+        public VoxelMessage(string messageText, Color messageColor, int numberLines)
         {
             text = messageText;
             color = messageColor;
+            numLines = numberLines;
         }
     }
    
