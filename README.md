@@ -2,6 +2,11 @@
 
 This is a mutliplayer Unity game based around a custom voxel engine. It runs on Unity version 2019.2.21f1
 
+# How to Play
+
+Download the zipped Client build from [here](https://github.com/RussellRuffolo/VoxelZombies/blob/master/Builds/WindowsBuild.zip). Extract the whole folder together and then run VoxelZombieClient.exe. The game is currently in pre-alpha so the server is often down. Email me at ruffolorussell@gmail.com if you would like to test the game. 
+![Executable](/Screenshots/Executable.png)
+
 # Gameplay
 
 Players spawn in a 3D voxel environment as humans. After 30 seconds a player is chosen to be a zombie. Zombies may infect humans by colliding with them. If all humans become infected the zombies win. If a round ends with humans alive those humans win. After the round time is up a new map is loaded and the process repeats.
@@ -29,7 +34,7 @@ This system ensures instant responsiveness from the client in cases of latency a
 
 ### Voxel Based World
 
-The world of Voxel Zombies is represented by a list of block IDs that are used to populate a 3D grid with each block's vertices. Rendering of these vertices is split into 16x16x16 block chunks,  for quick rerendering when blocks are changed. This allows for real time building and breaking by players. Different blocks are usually distinquished by texture, but half height and liquid blocks are also supported. 
+The world of Voxel Zombies is represented by a list of block IDs that are used to populate a 3D grid with each block's vertices. Rendering of these vertices is split into 16x16x16 block chunks,  for quick rerendering when blocks are changed. This allows for real time building and breaking by players. Different blocks are  distinquished by texture, and half height and liquid blocks are also supported. 
 
 ### Player Movement
 
