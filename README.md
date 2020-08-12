@@ -5,6 +5,7 @@ This is a mutliplayer Unity game based around a custom voxel engine. It runs on 
 # How to Play
 
 Download the zipped Client build from [here](https://github.com/RussellRuffolo/VoxelZombies/blob/master/Builds/WindowsBuild.zip). Extract the whole folder together and then run VoxelZombieClient.exe. The game is currently in pre-alpha so the server is often down. Email me at ruffolorussell@gmail.com if you would like to test the game. 
+
 ![Executable](/Screenshots/Executable.png)
 
 # Gameplay
