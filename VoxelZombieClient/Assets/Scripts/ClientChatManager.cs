@@ -30,6 +30,9 @@ namespace Client
 
         private string inputMessage = "";
 
+        private Vector2 referenceResolution = new Vector2(1024, 768);
+        private float whMatch = .5f;
+
         void Awake()
         {
             vClient = GetComponent<VoxelClient>();
@@ -38,6 +41,7 @@ namespace Client
             inputPanel.enabled = false;
             chatEnabled = false;
 
+            Debug.Log("Scale factor is: " + GetScale(Screen.width, Screen.height, referenceResolution, whMatch));
         }
 
         // Update is called once per frame
@@ -83,8 +87,8 @@ namespace Client
                     }
                 }
                 inputText.text = inputMessage;
-          
-                while (CalculateLengthOfMessage(inputText.text, inputText) > 300)
+
+                while (CalculateLengthOfMessage(inputText.text, inputText) > (300 * GetScale(Screen.width, Screen.height, referenceResolution, whMatch)))
                 {
                     inputText.text = inputText.text.Remove(0, 1);
                 }
@@ -147,7 +151,7 @@ namespace Client
          
             float messageLength = CalculateLengthOfMessage(newMessage, DisplayedLogs[0]);
             
-            int numLines = Mathf.FloorToInt(messageLength / 300) + 1;
+            int numLines = Mathf.FloorToInt(messageLength / (300 * GetScale(Screen.width, Screen.height, referenceResolution, whMatch))) + 1;
 
             Debug.Log("Message Length: " + messageLength + " For message: " + newMessage + " Gives num lines: " + numLines);
 
@@ -189,9 +193,9 @@ namespace Client
             {
                 myFont.GetCharacterInfo(c, out characterInfo, chatText.fontSize);
 
-                totalLength += characterInfo.advance;
+                totalLength += characterInfo.width / GetScale(Screen.width, Screen.height, referenceResolution, whMatch);
             }
-            totalLength = totalLength * chatCanvas.GetComponent<Canvas>().scaleFactor;
+        
             return totalLength;
         }
 
@@ -199,7 +203,7 @@ namespace Client
         {
             string newMessage = "";
 
-            int length = 0;
+            float length = 0;
 
             Font myFont = chatText.font;  //chatText is my Text component
             CharacterInfo characterInfo = new CharacterInfo();
@@ -210,9 +214,9 @@ namespace Client
             {
                 myFont.GetCharacterInfo(arr[i], out characterInfo, chatText.fontSize);
 
-                length += characterInfo.advance;
+                length += characterInfo.width;
 
-                if(length > 300)
+                if(length > 300 )
                 {
                     length -= 300;
                     newMessage += '\n';
@@ -246,6 +250,12 @@ namespace Client
 
             
           
+        }
+
+        private float GetScale(int width, int height, Vector2 scalerReferenceResolution, float scalerMatchWidthOrHeight)
+        {
+            return Mathf.Pow(width / scalerReferenceResolution.x, 1f - scalerMatchWidthOrHeight) *
+                   Mathf.Pow(height / scalerReferenceResolution.y, scalerMatchWidthOrHeight);
         }
 
         IEnumerator ChatDelay()

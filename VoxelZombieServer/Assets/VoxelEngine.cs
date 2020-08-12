@@ -50,20 +50,20 @@ public class VoxelEngine : MonoBehaviour
          MapData asylum = new MapData("asylum",  25, 129.5f, 30);
           mapList.Add(asylum);
 
-        MapData domti = new MapData("domti", 25, 129.5f, 30);
-        mapList.Add(domti);
+        //MapData domti = new MapData("domti", 25, 129.5f, 30);
+      //  mapList.Add(domti);
 
-        MapData excavation = new MapData("excavation", 25, 129.5f, 30);
-        mapList.Add(excavation);
+      //  MapData excavation = new MapData("excavation", 25, 129.5f, 30);
+       // mapList.Add(excavation);
 
-        MapData fortress = new MapData("fortress", 60, 132, 32);
-        mapList.Add(fortress);
+      //  MapData fortress = new MapData("fortress", 60, 132, 32);
+      //  mapList.Add(fortress);
 
         //        MapData a_reverie = new MapData("a_reverie", 123, 3, 125);
         //      mapList.Add(a_reverie);
 
-        MapData pandoras_box = new MapData("pandoras_box", 25, 129.5f, 30);
-        mapList.Add(pandoras_box);
+      //  MapData pandoras_box = new MapData("pandoras_box", 25, 129.5f, 30);
+       // mapList.Add(pandoras_box);
 
        // MapData tsunami = new MapData("tsunami", 25, 129.5f, 30);
      //   mapList.Add(tsunami);
@@ -82,11 +82,11 @@ public class VoxelEngine : MonoBehaviour
 
         //  MapData italy = new MapData("italy",  53, 89.5f, 63);
         //   mapList.Add(italy);
-           MapData swiss = new MapData("swiss",  29, 50.5f, 12);
-          mapList.Add(swiss);
+         //  MapData swiss = new MapData("swiss",  29, 50.5f, 12);
+        //  mapList.Add(swiss);
 
-        MapData swordbase = new MapData("swordbase", 56, 20, 4);
-        mapList.Add(swordbase);
+      //  MapData swordbase = new MapData("swordbase", 56, 20, 4);
+      //  mapList.Add(swordbase);
 
         // mapList.Add(hawaii);
     }
