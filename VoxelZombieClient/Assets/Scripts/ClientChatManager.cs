@@ -31,7 +31,7 @@ namespace Client
         private string inputMessage = "";
 
         private Vector2 referenceResolution = new Vector2(1024, 768);
-        private float whMatch = .5f;
+        private float whMatch = 0f;
 
         void Awake()
         {
@@ -41,7 +41,10 @@ namespace Client
             inputPanel.enabled = false;
             chatEnabled = false;
 
-            Debug.Log("Scale factor is: " + GetScale(Screen.width, Screen.height, referenceResolution, whMatch));
+           // Debug.Log("Input text size delta is: " + inputText.rectTransform.sizeDelta.x);
+          //  Debug.Log("Scale factor is: " + GetScale(Screen.width, Screen.height, referenceResolution, whMatch));
+          //  Debug.Log("Message line length is: " + GetScale(Screen.width, Screen.height, referenceResolution, whMatch) * inputText.rectTransform.sizeDelta.x);
+          //  Debug.Log("Message line length is: " + GetScale(Screen.width, Screen.height, referenceResolution, whMatch) * inputText.rectTransform.sizeDelta.x);
         }
 
         // Update is called once per frame
@@ -87,12 +90,20 @@ namespace Client
                     }
                 }
                 inputText.text = inputMessage;
-
-                while (CalculateLengthOfMessage(inputText.text, inputText) > (300 * GetScale(Screen.width, Screen.height, referenceResolution, whMatch)))
+                
+                /*
+                while (CalculateLengthOfMessage(inputText.text, inputText) > (inputText.rectTransform.sizeDelta.x * GetScale(Screen.width, Screen.height, referenceResolution, whMatch)))
                 {
                     inputText.text = inputText.text.Remove(0, 1);
                 }
+                */
               
+            
+                while (CalculateLengthOfMessage(inputText.text, inputText) > (inputText.rectTransform.sizeDelta.x ))
+                {
+                    inputText.text = inputText.text.Remove(0, 1);
+                }
+               
 
             }
             else
@@ -150,8 +161,9 @@ namespace Client
 
          
             float messageLength = CalculateLengthOfMessage(newMessage, DisplayedLogs[0]);
-            
-            int numLines = Mathf.FloorToInt(messageLength / (300 * GetScale(Screen.width, Screen.height, referenceResolution, whMatch))) + 1;
+
+             //int numLines = Mathf.FloorToInt(messageLength / (DisplayedLogs[0].rectTransform.sizeDelta.x * GetScale(Screen.width, Screen.height, referenceResolution, whMatch))) + 1;
+            int numLines = Mathf.FloorToInt(messageLength / (DisplayedLogs[0].rectTransform.sizeDelta.x)) + 1;
 
             Debug.Log("Message Length: " + messageLength + " For message: " + newMessage + " Gives num lines: " + numLines);
 
@@ -193,7 +205,7 @@ namespace Client
             {
                 myFont.GetCharacterInfo(c, out characterInfo, chatText.fontSize);
 
-                totalLength += characterInfo.width / GetScale(Screen.width, Screen.height, referenceResolution, whMatch);
+                totalLength += characterInfo.advance;
             }
         
             return totalLength;
@@ -214,13 +226,23 @@ namespace Client
             {
                 myFont.GetCharacterInfo(arr[i], out characterInfo, chatText.fontSize);
 
-                length += characterInfo.width;
+                length += characterInfo.advance;
 
-                if(length > 300 )
+                /*
+                if (length > chatText.rectTransform.sizeDelta.x * GetScale(Screen.width, Screen.height, referenceResolution, whMatch))
                 {
-                    length -= 300;
+                    length -= chatText.rectTransform.sizeDelta.x * GetScale(Screen.width, Screen.height, referenceResolution, whMatch);
                     newMessage += '\n';
                 }
+                */
+                
+                
+                if (length > chatText.rectTransform.sizeDelta.x)
+                {
+                    length -= chatText.rectTransform.sizeDelta.x;
+                    newMessage += '\n';
+                }
+               
                 newMessage += arr[i];
             }
 

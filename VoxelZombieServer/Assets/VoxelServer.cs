@@ -647,9 +647,9 @@ public class VoxelServer : MonoBehaviour
     {
         bEditor.EditedBlocks.Clear();
 
-        foreach (IClient c in XMLServer.Server.ClientManager.GetAllClients())
+        foreach (ushort ID in PlayerManager.PlayerDictionary.Keys)
         {
-            UpdatePlayerState(c.ID, 0);
+            UpdatePlayerState(ID, 0);
         }
 
         Vector3 spawnPosition = new Vector3(vEngine.currentMap.SpawnX, vEngine.currentMap.SpawnY, vEngine.currentMap.SpawnZ);
