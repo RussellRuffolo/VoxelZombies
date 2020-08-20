@@ -438,8 +438,8 @@ namespace DarkRift.Client.Unity
             {
                 if (!e.LocalDisconnect)
                     Debug.Log("Disconnected from server, error: " + e.Error);
-             
-                    Dispatcher.InvokeAsync(
+
+                Dispatcher.InvokeAsync(
                     () =>
                     {
                         EventHandler<DisconnectedEventArgs> handler = Disconnected;
@@ -449,8 +449,6 @@ namespace DarkRift.Client.Unity
                         }
                     }
                 );
-                
-                
             }
             else
             {

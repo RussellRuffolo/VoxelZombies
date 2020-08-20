@@ -18,7 +18,7 @@ public class VoxelEngine : MonoBehaviour
    
 
     public BoundaryController bController;
-    public WaterEngine wEngine;
+
 
     public bool loadingMap = false;
   
