@@ -15,6 +15,7 @@ namespace Client
         private UnityClient Client;
 
         public Text nameText;
+        public Text passwordText;
         public Text usernameTakenText;
 
         public Canvas loginCanvas;
