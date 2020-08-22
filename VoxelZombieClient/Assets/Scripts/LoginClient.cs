@@ -16,7 +16,11 @@ namespace Client
 
         public Text nameText;
         public Text passwordText;
+
         public Text usernameTakenText;
+        public Text passwordNoMatchText;
+        public Text accountCreatedText;
+        public Text usernameNotExistText;
 
         public Canvas loginCanvas;
         public Canvas chatCanvas;
@@ -32,6 +36,9 @@ namespace Client
             Client.MessageReceived += MessageReceived;
 
             usernameTakenText.enabled = false;
+            passwordNoMatchText.enabled = false;
+            accountCreatedText.enabled = false;
+            usernameNotExistText.enabled = false;
 
         }
 
@@ -41,17 +48,52 @@ namespace Client
             {
                 using (DarkRiftReader reader = e.GetMessage().GetReader())
                 {
+                    ushort loginStatus = reader.ReadUInt16();
+                    if (loginStatus == 0) //succesful login
+                    {
+
+                        cManager.enabled = true;
+                        chatCanvas.enabled = true;
+                        Destroy(loginCanvas.gameObject); //login Canvas generated errors after being disabled                
+             
+
+                    }
+                    else if(loginStatus == 1) //Username is not in database
+                    {
+                        DisableTexts();
+                        usernameNotExistText.enabled = true;
+                    }
+                    else if (loginStatus == 2) //Supplied password does not match password of corresponding name in db
+                    {
+                        DisableTexts();
+                        passwordNoMatchText.enabled = true;
+                    }
+                    else //error logging in
+                    {
+                        Debug.Log("Login status is: " + loginStatus);
+                    }
+                }
+              
+            }
+            else if (e.Tag == Tags.CREATE_ACCOUNT_TAG)
+            {
+                using (DarkRiftReader reader = e.GetMessage().GetReader())
+                {
                     bool succesful = reader.ReadBoolean();
                     if (!succesful)
                     {
+                        DisableTexts();
                         usernameTakenText.enabled = true;
+                       
 
                     }
                     else
                     {
-                        cManager.enabled = true;
-                        chatCanvas.enabled = true;
-                        Destroy(loginCanvas.gameObject); //login Canvas generated errors after being disabled                
+                        DisableTexts();
+                        accountCreatedText.enabled = true;
+                        nameText.text = "";
+                        passwordText.text = "";
+
                     }
                 }
             }
@@ -60,15 +102,24 @@ namespace Client
 
         }
 
+        private void DisableTexts()
+        {
+            usernameTakenText.enabled = false;
+            passwordNoMatchText.enabled = false;
+            accountCreatedText.enabled = false;
+            usernameNotExistText.enabled = false;
+
+        }
+
         public void OnLogin()
         {
-            if (nameText.text != "")
-            {
-                Debug.Log("Name is: " + nameText.text);
+            if (nameText.text != "" && passwordText.text != "")
+            {          
 
                 using (DarkRiftWriter LoginWriter = DarkRiftWriter.Create())
                 {
                     LoginWriter.Write(nameText.text);
+                    LoginWriter.Write(passwordText.text);
 
                     using (Message loginMessage = Message.Create(Tags.LOGIN_ATTEMPT_TAG, LoginWriter))
                     {
@@ -80,6 +131,28 @@ namespace Client
             else
             {
                 Debug.Log("No Name Entered");
+            }
+        }
+
+        public void OnCreateAccount()
+        {
+            if (nameText.text != "" && passwordText.text != "")
+            {   
+                using (DarkRiftWriter CreateAccountWriter = DarkRiftWriter.Create())
+                {
+                    CreateAccountWriter.Write(nameText.text);
+                    CreateAccountWriter.Write(passwordText.text);
+
+                    using (Message createAccountMessage = Message.Create(Tags.CREATE_ACCOUNT_TAG, CreateAccountWriter))
+                    {
+                        Client.SendMessage(createAccountMessage, SendMode.Reliable);
+                    }
+
+                }
+            }
+            else
+            {
+                Debug.Log("Name or password not entered");
             }
         }
 

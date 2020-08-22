@@ -19,6 +19,7 @@ namespace Client
         public const ushort LOGIN_ATTEMPT_TAG = 10;
         public const ushort CHAT_TAG = 11;
         public const ushort CLIENT_POSITION_TAG = 12;
+        public const ushort CREATE_ACCOUNT_TAG = 13;
     }
 }
 

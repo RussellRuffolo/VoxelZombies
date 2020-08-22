@@ -16,6 +16,7 @@ namespace Client
         public float stepDistance;
         private World currentWorld;
         private VoxelClient vClient;
+        private ClientVoxelEngine vEngine;
         
         const ushort BLOCK_TAG = 3;
 
@@ -95,7 +96,8 @@ namespace Client
         void Start()
         {
             playerCam = GetComponentInChildren<Camera>();
-            currentWorld = GameObject.FindGameObjectWithTag("Network").GetComponent<ClientVoxelEngine>().world;
+            vEngine = GameObject.FindGameObjectWithTag("Network").GetComponent<ClientVoxelEngine>();
+            currentWorld = vEngine.world;
             vClient = GameObject.FindGameObjectWithTag("Network").GetComponent<VoxelClient>();
 
             blockOutline.positionCount = 0;
@@ -452,12 +454,18 @@ namespace Client
                 int y = (int)selectionPosition.y;
                 int z = (int)selectionPosition.z;
 
-                ushort selectTag = currentWorld[x, y, z];
-
-                if (selectTag != 7 && selectTag != 0 && selectTag != 9 && selectTag != 11)
+                if(x < vEngine.Length && y < vEngine.Height && z < vEngine.Width)
                 {
-                    placeBlockTag = selectTag;
-                }
+                    ushort selectTag = currentWorld[x, y, z];
+                    Debug.Log("Selected: " + selectTag + "at x: " + x + " y: " + y + " z: " + z);
+                    if (selectTag != 7 && selectTag != 0 && selectTag != 9 && selectTag != 11)
+                    {
+                        placeBlockTag = selectTag;
+                    }
+
+                }              
+
+                
             }
            
         }

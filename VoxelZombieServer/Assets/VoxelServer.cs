@@ -4,6 +4,7 @@ using DarkRift;
 using DarkRift.Server;
 using DarkRift.Server.Unity;
 using UnityEngine;
+using UnityEngine.Networking;
 
 public class VoxelServer : MonoBehaviour
 {
@@ -20,6 +21,7 @@ public class VoxelServer : MonoBehaviour
     public const ushort LOGIN_ATTEMPT_TAG = 10;
     public const ushort CHAT_TAG = 11;
     public const ushort CLIENT_POSITION_TAG = 12;
+    public const ushort CREATE_ACCOUNT_TAG = 13;
 
     XmlUnityServer XMLServer;
     DarkRiftServer Server;
@@ -33,7 +35,10 @@ public class VoxelServer : MonoBehaviour
     //players who have loaded the current map
     List<IClient> loadedPlayers = new List<IClient>();
 
-    
+    private string addAccountURL = "http://localhost/VoxelZombies/addAccount.php?";
+
+    private string loginAttemptURL = "http://localhost/VoxelZombies/loginAttempt.php?";
+
 
     public Dictionary<ushort, string> playerNames = new Dictionary<ushort, string>();
 
@@ -139,6 +144,10 @@ public class VoxelServer : MonoBehaviour
            else if(e.Tag == CHAT_TAG)
             {
                 HandlePlayerChat(e);
+            }
+           else if(e.Tag == CREATE_ACCOUNT_TAG)
+            {
+                TryCreateAccount(e);
             }
         }
 
@@ -279,44 +288,129 @@ public class VoxelServer : MonoBehaviour
         }
     }
 
+    private void TryCreateAccount(MessageReceivedEventArgs e)
+    {
+        using (DarkRiftReader reader = e.GetMessage().GetReader())
+        {
+            string userName = reader.ReadString();
+            string password = reader.ReadString();
 
-   //If login is succesful then initialize player
-   //otherwise tell client unsuccesful so they can attempt again
+            StartCoroutine(PostNewAccount(userName, password, e));
+        }
+    }
+
+    IEnumerator PostNewAccount(string userName, string password, MessageReceivedEventArgs e)
+    {
+        WWWForm form = new WWWForm();
+
+        form.AddField("name", userName);
+        form.AddField("password", password);
+
+        UnityWebRequest account_post = UnityWebRequest.Post(addAccountURL, form);
+
+        yield return account_post.SendWebRequest();
+
+        string returnText = account_post.downloadHandler.text;
+
+        bool createdAccount;
+        
+        if(returnText == "Name in Database")
+        {
+            createdAccount = false;
+            Debug.Log("Name in database");
+        }
+        else if(returnText == "Added Account to Database")
+        {
+            createdAccount = true;
+            Debug.Log("created account");
+        }
+        else
+        {
+            createdAccount = false;
+            Debug.LogError(returnText);
+        }
+
+        using (DarkRiftWriter createAccountWriter = DarkRiftWriter.Create())
+        {
+            createAccountWriter.Write(createdAccount);
+            using (Message accountMessage = Message.Create(CREATE_ACCOUNT_TAG, createAccountWriter))
+            {
+                e.Client.SendMessage(accountMessage, SendMode.Reliable);
+            }
+
+        }
+    }
+
+  
+
+    IEnumerator PostLoginAttempt(string name, string password, MessageReceivedEventArgs e)
+    {
+        WWWForm form = new WWWForm();
+
+        form.AddField("name", name);
+        form.AddField("password", password);
+
+        UnityWebRequest loginPost = UnityWebRequest.Post(loginAttemptURL, form);
+
+        yield return loginPost.SendWebRequest();
+
+        string returnText = loginPost.downloadHandler.text;
+
+        Debug.Log(returnText);
+
+        ushort succesfulLogin;
+
+        if (returnText == "Login Succesful")
+        {
+            playerNames.Add(e.Client.ID, name);
+
+            InitializePlayer(e);
+
+            SendPublicChat(playerNames[e.Client.ID] + " has joined the fray.", 2);
+
+            succesfulLogin = 0;
+        }
+        else if (returnText == "No Username")
+        {
+            succesfulLogin = 1;
+        }
+        else if (returnText == "Password Mismatch")
+        {
+            succesfulLogin = 2;
+
+        }
+        else
+        {
+            succesfulLogin = 3;
+            Debug.LogError(returnText);
+        }
+
+        //Tells the client if the login was succesful.
+        //If it was not the client is prepared to send another login attempt message
+        using (DarkRiftWriter loginWriter = DarkRiftWriter.Create())
+        {
+            loginWriter.Write(succesfulLogin);
+            using (Message loginMessage = Message.Create(LOGIN_ATTEMPT_TAG, loginWriter))
+            {
+                e.Client.SendMessage(loginMessage, SendMode.Reliable);
+            }
+
+        }
+
+    }
+
+    //If login is succesful then initialize player
+    //otherwise tell client unsuccesful so they can attempt again
     private void HandleLogin(MessageReceivedEventArgs e)
     {
         using (DarkRiftReader reader = e.GetMessage().GetReader())
         {
-            bool succesfulLogin;
 
-            string newPlayerName = reader.ReadString();
+            string name = reader.ReadString();
+            string password = reader.ReadString();
 
-            if(playerNames.ContainsValue(newPlayerName))
-            {
-                succesfulLogin = false;
-            }
-            else
-            {
-                playerNames.Add(e.Client.ID, newPlayerName);
-                succesfulLogin = true;
-
-                InitializePlayer(e);
-
-                SendPublicChat(playerNames[e.Client.ID] + " has joined the fray.", 2);
-            }
-            
-            //Tells the client if the login was succesful.
-            //If it was not the client is prepared to send another login attempt message
-            using (DarkRiftWriter loginWriter = DarkRiftWriter.Create())
-            {
-                loginWriter.Write(succesfulLogin);
-                using (Message loginMessage = Message.Create(LOGIN_ATTEMPT_TAG, loginWriter))
-                {
-                    e.Client.SendMessage(loginMessage, SendMode.Reliable);
-                }
-
-            }
-
-            
+            StartCoroutine(PostLoginAttempt(name, password, e));
+   
 
         }
     }
