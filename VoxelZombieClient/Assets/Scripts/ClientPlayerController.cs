@@ -15,9 +15,15 @@ namespace Client
         public float AirAcceleration;
         public float jumpSpeed;
         public float gravAcceleration;
+
         public float verticalWaterMaxSpeed;
         public float verticalWaterAcceleration;
         public float horizontalWaterSpeed;
+
+        public float verticalLavaMaxSpeed;
+        public float verticalLavaAcceleration;
+        public float horizontalLavaSpeed;
+
         public float waterExitSpeed;
 
         public float minimumX = -60f;
@@ -278,10 +284,46 @@ namespace Client
                 }
             
             }
+            else if (moveState == 4) //lava movement
+            {
+                if (currentInputs.Jump)
+                {
+                    if (yVel >= verticalLavaMaxSpeed)
+                    {
+                        yVel = verticalLavaMaxSpeed;
+                    }
+                    else
+                    {
+                        yVel += verticalLavaAcceleration * Time.fixedDeltaTime;
+                    }
+                }
+                else
+                {
+                    if (yVel < -verticalLavaMaxSpeed)
+                    {
+                        yVel += verticalLavaAcceleration * Time.fixedDeltaTime;
+                        if (yVel > -verticalLavaMaxSpeed)
+                        {
+                            yVel = -verticalLavaMaxSpeed;
+                        }
+                    }
+                    else
+                    {
+                        yVel -= verticalLavaAcceleration * Time.fixedDeltaTime;
+                        if (yVel < -verticalLavaMaxSpeed)
+                        {
+                            yVel = -verticalLavaMaxSpeed;
+                        }
+                    }
+                }
 
-           // Vector3 collisionVector = pTracker.GetCollisionVector();
+                playerRB.velocity = currentInputs.MoveVector * horizontalLavaSpeed;
+                playerRB.velocity += yVel * Vector3.up;
+            }
 
-           // playerRB.velocity += collisionVector;
+            // Vector3 collisionVector = pTracker.GetCollisionVector();
+
+            // playerRB.velocity += collisionVector;
             //add collision logic here
 
         }

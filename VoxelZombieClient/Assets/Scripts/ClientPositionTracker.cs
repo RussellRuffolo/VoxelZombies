@@ -33,31 +33,43 @@ namespace Client
             Vector3 feetPosition = new Vector3(transform.position.x, transform.position.y -.08f - (1.76f /2), transform.position.z);
             Vector3 headPosition = new Vector3(transform.position.x, transform.position.y - .08f + (1.76f / 2), transform.position.z);
 
-            if (world[Mathf.FloorToInt(feetPosition.x), Mathf.FloorToInt(feetPosition.y + .2f), Mathf.FloorToInt(feetPosition.z)] == 9)
+            ushort jumpTag = world[Mathf.FloorToInt(feetPosition.x), Mathf.FloorToInt(feetPosition.y + .2f), Mathf.FloorToInt(feetPosition.z)];
+            if (jumpTag == 9 || jumpTag == 11)
             {
                 hasWaterJump = true;
             }
 
             Collider[] thingsHit = Physics.OverlapBox(transform.position + Vector3.down * .08f, colliderHalfExtents);
 
-            foreach(Collider col in thingsHit)
+
+            bool inWater = false;
+
+            foreach (Collider col in thingsHit)
             {
                 if(col.CompareTag("Water"))
                 {
-                    lastMoveState = 1;
-                    return 1;
+                    inWater = true;
+                }
+                else if(col.CompareTag("Lava"))
+                {
+                    lastMoveState = 4;
+                    return 4;
                 }
             }
 
+            if(inWater)
+            {
+                lastMoveState = 1;
+                return 1;
+            }
         
             
 
-            if (world[Mathf.FloorToInt(feetPosition.x), Mathf.FloorToInt(feetPosition.y), Mathf.FloorToInt(feetPosition.z)] != 9 && world[Mathf.FloorToInt(headPosition.x), Mathf.FloorToInt(headPosition.y), Mathf.FloorToInt(headPosition.z)] != 9)
+            if (world[Mathf.FloorToInt(feetPosition.x), Mathf.FloorToInt(feetPosition.y), Mathf.FloorToInt(feetPosition.z)] != 9 && world[Mathf.FloorToInt(headPosition.x), Mathf.FloorToInt(headPosition.y), Mathf.FloorToInt(headPosition.z)] != 9 && world[Mathf.FloorToInt(feetPosition.x), Mathf.FloorToInt(feetPosition.y), Mathf.FloorToInt(feetPosition.z)] != 11 && world[Mathf.FloorToInt(headPosition.x), Mathf.FloorToInt(headPosition.y), Mathf.FloorToInt(headPosition.z)] != 11)
             {
-                if(lastMoveState == 1)
+                if(lastMoveState == 1 || lastMoveState == 4)
                 {
                     lastMoveState = 3;
-                    Debug.Log("Exit water");
                     return 3;
                 }
 
@@ -67,8 +79,17 @@ namespace Client
                   
             }
 
-            lastMoveState = 1;
-            return 1;
+            if(world[Mathf.FloorToInt(feetPosition.x), Mathf.FloorToInt(feetPosition.y), Mathf.FloorToInt(feetPosition.z)] == 9 && world[Mathf.FloorToInt(headPosition.x), Mathf.FloorToInt(headPosition.y), Mathf.FloorToInt(headPosition.z)] == 9)
+            {
+                lastMoveState = 1;
+                return 1;
+            }
+            else
+            {
+                lastMoveState = 4;
+                return 4;
+            }
+           
 
             
 

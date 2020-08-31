@@ -101,11 +101,15 @@ public class ServerGameManager : MonoBehaviour
             //If this player was human at the end of the round
             if(p.stateTag == 0)
             {
-                StartCoroutine(PostRoundWon(p.name));
+                p.roundsWon += 1;
+                //StartCoroutine(PostRoundWon(p.name));
             }
         }
     }
 
+
+   
+    /*
     IEnumerator PostRoundWon(string name)
     {
 
@@ -122,6 +126,7 @@ public class ServerGameManager : MonoBehaviour
         Debug.Log(returnText);
 
     }
+    */
 
     public void SubtractTime()
     {

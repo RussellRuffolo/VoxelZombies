@@ -43,6 +43,8 @@ public class VoxelServer : MonoBehaviour
 
     private string saltURL = "http://localhost/VoxelZombies/getSalt.php?";
 
+    private string playerStatsURL = "http://localhost/VoxelZombies/playerStats.php?";
+
 
     public Dictionary<ushort, string> playerNames = new Dictionary<ushort, string>();
 
@@ -232,6 +234,43 @@ public class VoxelServer : MonoBehaviour
                             SendPrivateChat("Improper format, use: /message [player] [message]", 2, e.Client.ID);
                         }
                         break;
+                    case "/stats":
+                        if(commands.Length == 1)
+                        {
+                            string name = PlayerManager.PlayerDictionary[e.Client.ID].name;
+                            int kills = PlayerManager.PlayerDictionary[e.Client.ID].kills;
+                            int deaths = PlayerManager.PlayerDictionary[e.Client.ID].deaths;
+                            int roundsWon = PlayerManager.PlayerDictionary[e.Client.ID].roundsWon;
+                            int timeOnline = PlayerManager.PlayerDictionary[e.Client.ID].timeOnline + (int)(Time.time - PlayerManager.PlayerDictionary[e.Client.ID].timeJoined);
+
+                            SendPrivateChat(name + "'s stats: \nKills: " + kills + "\nDeaths: " + deaths + "\nRounds Won: " + roundsWon + "\nTime Online: " + timeOnline, 2, e.Client.ID);
+
+                        }
+                        else if(commands.Length == 2)
+                        {
+                            string playerName = commands[1];
+                            if (playerNames.ContainsValue(playerName))
+                            {
+                                ushort ID = GetIDFromName(playerName);
+                               
+                                int kills = PlayerManager.PlayerDictionary[ID].kills;
+                                int deaths = PlayerManager.PlayerDictionary[ID].deaths;
+                                int roundsWon = PlayerManager.PlayerDictionary[ID].roundsWon;
+                                int timeOnline = PlayerManager.PlayerDictionary[ID].timeOnline + (int)(Time.time - PlayerManager.PlayerDictionary[e.Client.ID].timeJoined);
+
+                                SendPrivateChat(playerName + "'s stats: \nKills: " + kills + "\nDeaths: " + deaths + "\nRounds Won: " + roundsWon + "\nTime Online: " + timeOnline, 2, e.Client.ID);
+                            }
+                            else
+                            {
+                                StartCoroutine(PrintPlayerStats(playerName, e.Client.ID));
+                            }
+
+                        }
+                        else
+                        {
+                            SendPrivateChat("Improper format, use: /stats to see your stats or /stats [player] to see another players stats", 2, e.Client.ID);
+                        }
+                        break;
                     case "/commands":
                         SendPrivateChat("The available commands are: /vote, and /message", 2, e.Client.ID);
                         break;
@@ -252,6 +291,36 @@ public class VoxelServer : MonoBehaviour
 
 
         }
+    }
+
+    IEnumerator PrintPlayerStats(string name, ushort recipientID)
+    {
+        WWWForm form = new WWWForm();
+
+        form.AddField("name", name);
+
+        UnityWebRequest stats_post = UnityWebRequest.Post(playerStatsURL, form);
+
+        yield return stats_post.SendWebRequest();
+
+        string returnText = stats_post.downloadHandler.text;
+
+        string[] stats = returnText.Split();
+
+        if (stats.Length == 4)
+        {
+            int kills = int.Parse(stats[0]);
+            int deaths = int.Parse(stats[1]);
+            int roundsWon = int.Parse(stats[2]);
+            int timeOnline = int.Parse(stats[3]);
+
+            SendPrivateChat(name + "'s stats: \nKills: " + kills + "\nDeaths: " + deaths + "\nRounds Won: " + roundsWon + "\nTime Online: " + timeOnline, 2, recipientID);
+        }
+        else
+        {
+            SendPrivateChat("Player: " + name + " not found.", 2, recipientID);
+        }
+
     }
 
     public ushort GetIDFromName(string playerName)

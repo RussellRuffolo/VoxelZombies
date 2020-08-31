@@ -18,6 +18,9 @@ public class Chunk : MonoBehaviour
     private MeshFilter waterMeshFilter;
     private MeshCollider waterMeshCollider;
 
+    private MeshFilter lavaMeshFilter;
+    private MeshCollider lavaMeshCollider;
+
     public ChunkID ID;
 
     private GameObject flower1;
@@ -31,6 +34,21 @@ public class Chunk : MonoBehaviour
 
     List<int>[] TriangleLists = new List<int>[55];
 
+    List<Vector3> vertices = new List<Vector3>();
+    List<Vector3> waterVertices = new List<Vector3>();
+    List<Vector3> lavaVertices = new List<Vector3>();
+
+    List<int> waterTriangles = new List<int>();
+    List<int> lavaTriangles = new List<int>();
+
+    List<Vector3> normals = new List<Vector3>();
+    List<Vector3> waterNormals = new List<Vector3>();
+    List<Vector3> lavaNormals = new List<Vector3>();
+
+    List<Vector3> uvList = new List<Vector3>();
+    List<Vector3> waterUVs = new List<Vector3>();
+    List<Vector3> lavaUVs = new List<Vector3>();
+
     private Dictionary<Vector3, GameObject> modeledObjects = new Dictionary<Vector3, GameObject>();
     //0-48 are default MC ids offset back by 1 because 0 was air
     //49 is grass top
@@ -40,7 +58,7 @@ public class Chunk : MonoBehaviour
     //53 is tnt bottom
     //54 is bookshelf top/bottom
 
-    private List<Vector3> uvList = new List<Vector3>();
+ 
 
     public bool dirty = true;
 
@@ -253,20 +271,43 @@ public class Chunk : MonoBehaviour
         meshCollider.material = physMat;
 
         GameObject waterChunk = new GameObject();
+        waterChunk.name = "waterChunk";
         waterChunk.transform.position = transform.position;
         waterChunk.transform.parent = transform;
         waterChunk.tag = "Water";
         waterChunk.layer = 4; //water
 
-        List<Material> LiquidMats = new List<Material>();
-        LiquidMats.Add(GetComponent<MeshRenderer>().materials[8]);
-        LiquidMats.Add(GetComponent<MeshRenderer>().materials[10]);
+        //  List<Material> LiquidMats = new List<Material>();
+        // LiquidMats.Add(GetComponent<MeshRenderer>().materials[8]);
+        // LiquidMats.Add(GetComponent<MeshRenderer>().materials[10]);
+        Material[] waterMats = new Material[1];
+        waterMats[0] = GetComponent<MeshRenderer>().materials[8];
 
         MeshRenderer waterRenderer = waterChunk.AddComponent<MeshRenderer>();     
-        waterRenderer.materials = LiquidMats.ToArray(); 
+        waterRenderer.materials = waterMats; 
 
         waterMeshFilter = waterChunk.AddComponent<MeshFilter>();
         waterMeshCollider = waterChunk.AddComponent<MeshCollider>();
+
+        GameObject lavaChunk = new GameObject();
+        lavaChunk.name = "lavaChunk";
+        lavaChunk.transform.position = transform.position;
+        lavaChunk.transform.parent = transform;
+        lavaChunk.tag = "Lava";
+        lavaChunk.layer = 9; //lava
+        Material[] lavaMats = new Material[1];
+        lavaMats[0] = GetComponent<MeshRenderer>().materials[10];
+
+        MeshRenderer lavaRenderer = lavaChunk.AddComponent<MeshRenderer>();
+        lavaRenderer.materials = lavaMats;
+
+        lavaMeshFilter = lavaChunk.AddComponent<MeshFilter>();
+        lavaMeshCollider = lavaChunk.AddComponent<MeshCollider>();
+
+
+
+
+
 
         flower1 = Resources.Load<GameObject>("Flower1");
         flower2 = Resources.Load<GameObject>("Flower2");
@@ -287,22 +328,39 @@ public class Chunk : MonoBehaviour
 
     public void RenderToMesh()
     {
-        var vertices = new List<Vector3>();
-        var waterVertices = new List<Vector3>();
+        // var vertices = new List<Vector3>();
+        //  var waterVertices = new List<Vector3>();
+        //   var lavaVertices = new List<Vector3>();
+
+ 
+
+        vertices.Clear();
+        waterVertices.Clear();
+        lavaVertices.Clear();
+
         foreach (List<int> triangleList in TriangleLists)
         {
             triangleList.Clear();
         }
 
-        List<int> waterTriangles = new List<int>();
-        List<int> lavaTriangles = new List<int>();
+        waterTriangles.Clear();
+        lavaTriangles.Clear();
 
-        var normals = new List<Vector3>();
-        var waterNormals = new List<Vector3>();
+        normals.Clear();
+        waterNormals.Clear();
+        lavaNormals.Clear();
+
+       // List<int> waterTriangles = new List<int>();
+       // List<int> lavaTriangles = new List<int>();
+
+      //  var normals = new List<Vector3>();
+       // var waterNormals = new List<Vector3>();
 
 
         uvList.Clear();
-        var waterUVs = new List<Vector3>();
+        waterUVs.Clear();
+        lavaUVs.Clear();
+       // var waterUVs = new List<Vector3>();
 
         for (var x = 0; x < 16; x++)
         {
@@ -313,6 +371,7 @@ public class Chunk : MonoBehaviour
                     var pos = new Vector3(x, y, z);
                     var verticesPos = vertices.Count;
                     var waterVertPos = waterVertices.Count;
+                    var lavaVertPos = lavaVertices.Count;
                     var voxelType = this[x, y, z];
                     // If it is air we ignore this block
                     if (voxelType == 0)
@@ -374,7 +433,8 @@ public class Chunk : MonoBehaviour
 
                     //RENDER FRONT
                     int front;
-                    if (z == 0) {
+                    if (z == 0)
+                    {
                         ChunkID frontID = new ChunkID(ID.X, ID.Y, ID.Z - 1);
                         if (world.Chunks.ContainsKey(frontID))
                         {
@@ -388,7 +448,7 @@ public class Chunk : MonoBehaviour
                     else { front = this[x, y, z - 1]; }
                     if (_transparentBlockIDs.Contains(front) && front != voxelType)
                     {
-                        if(voxelType == 9 || voxelType == 11)
+                        if(voxelType == 9)
                         {
                             foreach(var vert in _frontVertices)
                                 waterVertices.Add(pos + vert);
@@ -401,22 +461,31 @@ public class Chunk : MonoBehaviour
 
                             foreach (var normal in _faceNormals)
                                 waterNormals.Add(normal);
-                            if(voxelType == 9)
+                          
+                            foreach (var tri in _frontTriangles)
                             {
-                                foreach (var tri in _frontTriangles)
-                                {
-                                    waterTriangles.Add(waterVertPos + tri);
-                                }
-                            }
-                            else
-                            {
-                                foreach (var tri in _frontTriangles)
-                                {
-                                    lavaTriangles.Add(waterVertPos + tri);
-                                }
-                            }
-                            
+                                waterTriangles.Add(waterVertPos + tri);
+                            }                          
 
+                        }
+                        else if(voxelType == 11)
+                        {
+                            foreach (var vert in _frontVertices)
+                                lavaVertices.Add(pos + vert);
+
+                            lavaUVs.Add(new Vector2(0, 0));
+                            lavaUVs.Add(new Vector2(1, 0));
+
+                            lavaUVs.Add(new Vector2(1, 1));
+                            lavaUVs.Add(new Vector2(0, 1));
+
+                            foreach (var normal in _faceNormals)
+                                lavaNormals.Add(normal);
+
+                            foreach (var tri in _frontTriangles)
+                            {
+                                lavaTriangles.Add(lavaVertPos + tri);
+                            }
                         }
                         else
                         {
@@ -450,6 +519,7 @@ public class Chunk : MonoBehaviour
 
                     verticesPos = vertices.Count;
                     waterVertPos = waterVertices.Count;
+                    lavaVertPos = lavaVertices.Count;
 
                     if (normals.Count != vertices.Count)
                     {
@@ -458,7 +528,8 @@ public class Chunk : MonoBehaviour
 
                     //RENDER TOP
                     int top;
-                    if (y == 15) {
+                    if (y == 15)
+                    {
                         ChunkID topID = new ChunkID(ID.X, ID.Y + 1, ID.Z );
                         if (world.Chunks.ContainsKey(topID))
                         {
@@ -474,7 +545,7 @@ public class Chunk : MonoBehaviour
                         top = 0;
                     if ((_transparentBlockIDs.Contains(top) && top != voxelType) || voxelType == 44)
                     {
-                        if (voxelType == 9 || voxelType == 11)
+                        if (voxelType == 9)
                         {
                             foreach (var vert in _topVertices)
                                 waterVertices.Add(pos + vert);
@@ -487,21 +558,31 @@ public class Chunk : MonoBehaviour
 
                             foreach (var normal in _faceNormals)
                                 waterNormals.Add(normal);
-                            if(voxelType == 9)
+                         
+                            foreach (var tri in _topTriangles)
                             {
-                                foreach (var tri in _topTriangles)
-                                {
-                                    waterTriangles.Add(waterVertPos + tri);
-                                }
+                                waterTriangles.Add(waterVertPos + tri);
                             }
-                            else
-                            {
-                                foreach (var tri in _topTriangles)
-                                {
-                                    lavaTriangles.Add(waterVertPos + tri);
-                                }
-                            }
+                         
                            
+                        }
+                        else if (voxelType == 11)
+                        {
+                            foreach (var vert in _topVertices)
+                                lavaVertices.Add(pos + vert);
+
+                            lavaUVs.Add(new Vector2(0, 0));
+                            lavaUVs.Add(new Vector2(0, 1));
+                            lavaUVs.Add(new Vector2(1, 1));
+                            lavaUVs.Add(new Vector2(1, 0));
+
+                            foreach (var normal in _faceNormals)
+                                lavaNormals.Add(normal);
+
+                            foreach (var tri in _topTriangles)
+                            {
+                                lavaTriangles.Add(lavaVertPos + tri);
+                            }
                         }
                         else
                         {
@@ -532,11 +613,13 @@ public class Chunk : MonoBehaviour
 
                     verticesPos = vertices.Count;
                     waterVertPos = waterVertices.Count;
+                    lavaVertPos = lavaVertices.Count;
 
 
                     //RENDER RIGHT
                     int right;
-                    if (x == 15) {
+                    if (x == 15)
+                    {
                         ChunkID rightID = new ChunkID(ID.X + 1, ID.Y, ID.Z);
                         if (world.Chunks.ContainsKey(rightID))
                         {
@@ -552,7 +635,7 @@ public class Chunk : MonoBehaviour
                     if (_transparentBlockIDs.Contains(right) && right != voxelType)
                     {
 
-                        if (voxelType == 9 || voxelType == 11)
+                        if (voxelType == 9)
                         {
                             foreach (var vert in _rightVertices)
                                 waterVertices.Add(pos + vert);
@@ -564,22 +647,30 @@ public class Chunk : MonoBehaviour
 
                             foreach (var normal in _faceNormals)
                                 waterNormals.Add(normal);
-                            if(voxelType == 9)
+                           
+                            foreach (var tri in _rightTriangles)
                             {
-                                foreach (var tri in _rightTriangles)
-                                {
-                                    waterTriangles.Add(waterVertPos + tri);
-                                }
+                                waterTriangles.Add(waterVertPos + tri);
                             }
-                            else
-                            {
-                                foreach (var tri in _rightTriangles)
-                                {
-                                    lavaTriangles.Add(waterVertPos + tri);
-                                }
+                      
+                        }
+                        else if (voxelType == 11)
+                        {
+                            foreach (var vert in _rightVertices)
+                                lavaVertices.Add(pos + vert);
 
+                            lavaUVs.Add(new Vector2(0, 0));
+                            lavaUVs.Add(new Vector2(0, 1));
+                            lavaUVs.Add(new Vector2(1, 1));
+                            lavaUVs.Add(new Vector2(1, 0));
+
+                            foreach (var normal in _faceNormals)
+                                lavaNormals.Add(normal);
+
+                            foreach (var tri in _rightTriangles)
+                            {
+                                lavaTriangles.Add(lavaVertPos + tri);
                             }
-                        
                         }
                         else
                         {
@@ -611,11 +702,13 @@ public class Chunk : MonoBehaviour
 
                     verticesPos = vertices.Count;
                     waterVertPos = waterVertices.Count;
+                    lavaVertPos = lavaVertices.Count;
 
 
                     //RENDER LEFT
                     int left;
-                    if (x == 0) {
+                    if (x == 0)
+                    {
                         ChunkID leftID = new ChunkID(ID.X - 1, ID.Y, ID.Z);
                         if (world.Chunks.ContainsKey(leftID))
                         {
@@ -630,7 +723,7 @@ public class Chunk : MonoBehaviour
 
                     if (_transparentBlockIDs.Contains(left) && left != voxelType)
                     {
-                        if (voxelType == 9 || voxelType == 11)
+                        if (voxelType == 9)
                         {
                             foreach (var vert in _leftVertices)
                                 waterVertices.Add(pos + vert);
@@ -642,21 +735,31 @@ public class Chunk : MonoBehaviour
 
                             foreach (var normal in _faceNormals)
                                 waterNormals.Add(normal);
-                            if(voxelType == 9)
+                          
+                            foreach (var tri in _leftTriangles)
                             {
-                                foreach (var tri in _leftTriangles)
-                                {
-                                    waterTriangles.Add(waterVertPos + tri);
-                                }
+                                waterTriangles.Add(waterVertPos + tri);
                             }
-                            else
-                            {
-                                foreach (var tri in _leftTriangles)
-                                {
-                                    lavaTriangles.Add(waterVertPos + tri);
-                                }
-                            }
+                      
                          
+                        }
+                        else if (voxelType == 11)
+                        {
+                            foreach (var vert in _leftVertices)
+                                lavaVertices.Add(pos + vert);
+
+                            lavaUVs.Add(new Vector2(0, 0));
+                            lavaUVs.Add(new Vector2(0, 1));
+                            lavaUVs.Add(new Vector2(1, 1));
+                            lavaUVs.Add(new Vector2(1, 0));
+
+                            foreach (var normal in _faceNormals)
+                                lavaNormals.Add(normal);
+
+                            foreach (var tri in _leftTriangles)
+                            {
+                                lavaTriangles.Add(lavaVertPos + tri);
+                            }
                         }
                         else
                         {
@@ -688,11 +791,13 @@ public class Chunk : MonoBehaviour
 
                     verticesPos = vertices.Count;
                     waterVertPos = waterVertices.Count;
+                    lavaVertPos = lavaVertices.Count;
 
 
                     //RENDER BACK
                     int back;
-                    if (z == 15) {
+                    if (z == 15)
+                    {
                         ChunkID backID = new ChunkID(ID.X, ID.Y, ID.Z + 1);
                         if (world.Chunks.ContainsKey(backID))
                         {
@@ -707,7 +812,7 @@ public class Chunk : MonoBehaviour
 
                     if (_transparentBlockIDs.Contains(back) && back != voxelType)
                     {
-                        if (voxelType == 9 || voxelType == 11)
+                        if (voxelType == 9)
                         {
                             foreach (var vert in _backVertices)
                                 waterVertices.Add(pos + vert);
@@ -719,23 +824,32 @@ public class Chunk : MonoBehaviour
 
                             foreach (var normal in _faceNormals)
                                 waterNormals.Add(normal);
-                            if(voxelType == 9)
+                        
+                            foreach (var tri in _backTriangles)
                             {
-                                foreach (var tri in _backTriangles)
-                                {
-                                    waterTriangles.Add(waterVertPos + tri);
-                                }
-
+                                waterTriangles.Add(waterVertPos + tri);
                             }
-                            else
-                            {
-                                foreach (var tri in _backTriangles)
-                                {
-                                    lavaTriangles.Add(waterVertPos + tri);
-                                }
 
-                            }
+                     
                        
+                        }
+                        else if (voxelType == 11)
+                        {
+                            foreach (var vert in _backVertices)
+                                lavaVertices.Add(pos + vert);
+
+                            lavaUVs.Add(new Vector2(1, 0));
+                            lavaUVs.Add(new Vector2(0, 1));
+                            lavaUVs.Add(new Vector2(0, 0));
+                            lavaUVs.Add(new Vector2(1, 0));
+
+                            foreach (var normal in _faceNormals)
+                                lavaNormals.Add(normal);
+
+                            foreach (var tri in _backTriangles)
+                            {
+                                lavaTriangles.Add(lavaVertPos + tri);
+                            }
                         }
                         else
                         {
@@ -768,12 +882,14 @@ public class Chunk : MonoBehaviour
 
                     verticesPos = vertices.Count;
                     waterVertPos = waterVertices.Count;
+                    lavaVertPos = lavaVertices.Count;
 
            
 
                     //RENDER BOTTOM
                     int bottom;
-                    if (y == 0) {
+                    if (y == 0)
+                    {
                         ChunkID bottomID = new ChunkID(ID.X, ID.Y - 1, ID.Z);
                         if (world.Chunks.ContainsKey(bottomID))
                         {
@@ -788,7 +904,7 @@ public class Chunk : MonoBehaviour
 
                     if ((_transparentBlockIDs.Contains(bottom) && bottom != voxelType) || bottom == 44)
                     {
-                        if (voxelType == 9 || voxelType == 11)
+                        if (voxelType == 9)
                         {
                             foreach (var vert in _bottomVertices)
                                 waterVertices.Add(pos + vert);
@@ -800,21 +916,31 @@ public class Chunk : MonoBehaviour
 
                             foreach (var normal in _faceNormals)
                                 waterNormals.Add(normal);
-                            if(voxelType == 9)
+                            
+                            foreach (var tri in _bottomTriangles)
                             {
-                                foreach (var tri in _bottomTriangles)
-                                {
-                                    waterTriangles.Add(waterVertPos + tri);
-                                }
+                                waterTriangles.Add(waterVertPos + tri);
                             }
-                            else
-                            {
-                                foreach (var tri in _bottomTriangles)
-                                {
-                                    lavaTriangles.Add(waterVertPos + tri);
-                                }
-                            }
+                   
                         
+                        }
+                        else if (voxelType == 11)
+                        {
+                            foreach (var vert in _bottomVertices)
+                                lavaVertices.Add(pos + vert);
+
+                            lavaUVs.Add(new Vector2(0, 0));
+                            lavaUVs.Add(new Vector2(0, 1));
+                            lavaUVs.Add(new Vector2(1, 1));
+                            lavaUVs.Add(new Vector2(1, 0));
+
+                            foreach (var normal in _faceNormals)
+                                lavaNormals.Add(normal);
+
+                            foreach (var tri in _bottomTriangles)
+                            {
+                                lavaTriangles.Add(lavaVertPos + tri);
+                            }
                         }
                         else
                         {
@@ -840,6 +966,9 @@ public class Chunk : MonoBehaviour
         }
 
         // Apply new mesh to MeshFilter
+
+        //FOR MEMORY PURPOSES TRY TO CHANGE THIS TO NOT MAKE A NEW MESH EVERY TIME
+        //MESH.CLEAR() should work but need to make it the first time
         var mesh = new Mesh();
         mesh.subMeshCount = 55;
         mesh.SetVertices(vertices);
@@ -857,13 +986,20 @@ public class Chunk : MonoBehaviour
         meshCollider.sharedMesh = mesh;
 
         var waterMesh = new Mesh();
-        waterMesh.subMeshCount = 2;
+        waterMesh.subMeshCount = 1;
         waterMesh.SetVertices(waterVertices);
         waterMesh.SetTriangles(waterTriangles.ToArray(), 0);
-        waterMesh.SetTriangles(lavaTriangles.ToArray(), 1);
         waterMesh.SetNormals(waterNormals);
         waterMeshFilter.mesh = waterMesh;
         waterMeshCollider.sharedMesh = waterMesh;
+
+        var lavaMesh = new Mesh();
+        lavaMesh.subMeshCount = 1;
+        lavaMesh.SetVertices(lavaVertices);
+        lavaMesh.SetTriangles(lavaTriangles.ToArray(), 0);
+        lavaMesh.SetNormals(lavaNormals);
+        lavaMeshFilter.mesh = lavaMesh;
+        lavaMeshCollider.sharedMesh = lavaMesh;
         
         if(normals.Count != vertices.Count)
         {

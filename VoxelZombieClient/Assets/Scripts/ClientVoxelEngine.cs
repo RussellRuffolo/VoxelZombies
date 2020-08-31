@@ -76,6 +76,8 @@ public class ClientVoxelEngine : MonoBehaviour
                     ChunkID newID = new ChunkID(x, y, z);
                     world.Chunks.Add(newID, chunk);
                     chunk.ID = newID;
+
+                    chunk.GetComponent<Chunk>().init();
                 }
             }
         }

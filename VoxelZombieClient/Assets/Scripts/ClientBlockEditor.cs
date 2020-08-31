@@ -350,22 +350,25 @@ namespace Client
             int x = Mathf.FloorToInt(checkPosition.x);
             int y = Mathf.FloorToInt(checkPosition.y);
             int z = Mathf.FloorToInt(checkPosition.z);
+
+            ushort blockTag = currentWorld[x, y, z];
+          
             
-            //untargetable blocks: air, water, lava
-            if (currentWorld[x, y, z] == 0 || currentWorld[x,y,z] == 9 || currentWorld[x,y,z] == 11)
+            //untargetable blocks: air, water, lava, outside of map
+            if (blockTag == 0 || blockTag == 9 || blockTag == 11 || blockTag == 100)
             {
                 return 0;
             }
 
             //looking down on a halfblock
-            if (currentWorld[x, y, z] == 44 )
+            if (blockTag == 44 )
             {
                 if(checkPosition.y - Mathf.Floor(checkPosition.y) > .5f)
                 return 3;
             }
 
             //modeled blocks: flowers, mushorooms
-            if (currentWorld[x, y, z] == 37 || currentWorld[x, y, z] == 38 || currentWorld[x, y, z] == 39 || currentWorld[x, y, z] == 40) 
+            if (blockTag == 37 || blockTag == 38 || blockTag == 39 || blockTag == 40) 
             {
                 return 2;
             }

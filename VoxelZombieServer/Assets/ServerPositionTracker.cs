@@ -66,13 +66,20 @@ public class ServerPositionTracker : MonoBehaviour
                     vServer.SendPublicChat(vServer.playerNames[otherTracker.ID] + " was infected by " + vServer.playerNames[ID] + "!", 2);
                     gManager.CheckZombieWin();
 
-                    StartCoroutine(PostKillData(ID, otherTracker.ID));
+                    //StartCoroutine(PostKillData(ID, otherTracker.ID));
+
+                    pManager.PlayerDictionary[ID].kills += 1;
+                    pManager.PlayerDictionary[otherTracker.ID].deaths += 1;
+
 
                 }
             }     
         }     
     }
 
+    //state changes are being handled at initialization/disconnect now
+    //This code will be removed barring a design revert
+    /*
     IEnumerator PostKillData(ushort zombieID, ushort humanID)
     {
         string humanName = pManager.PlayerDictionary[humanID].name;
@@ -91,34 +98,47 @@ public class ServerPositionTracker : MonoBehaviour
 
         Debug.Log(returnText);
     }
-
+    */
 
     public ushort CheckPlayerState()
     {
         Vector3 feetPosition = new Vector3(transform.position.x, transform.position.y - .08f - (1.76f / 2), transform.position.z);
         Vector3 headPosition = new Vector3(transform.position.x, transform.position.y - .08f + (1.76f / 2), transform.position.z);
-
-        if (world[Mathf.FloorToInt(feetPosition.x), Mathf.FloorToInt(feetPosition.y + .2f), Mathf.FloorToInt(feetPosition.z)] == 9)
+        ushort jumpTag = world[Mathf.FloorToInt(feetPosition.x), Mathf.FloorToInt(feetPosition.y + .2f), Mathf.FloorToInt(feetPosition.z)];
+        if (jumpTag == 9 || jumpTag == 11)
         {
             hasWaterJump = true;
         }
 
         Collider[] thingsHit = Physics.OverlapBox(transform.position + Vector3.down * .08f, colliderHalfExtents);
 
+        bool inWater = false;
+
         foreach (Collider col in thingsHit)
         {
             if (col.CompareTag("Water"))
             {
-                lastMoveState = 1;                
-                return 1;
+                inWater = true;               
+                
             }
+            else if(col.CompareTag("Lava"))
+            {
+                lastMoveState = 4;
+                return 4;
+            }
+        }
+
+        if(inWater)
+        {
+            lastMoveState = 1;
+            return 1;
         }
   
         
 
-        if (world[Mathf.FloorToInt(feetPosition.x), Mathf.FloorToInt(feetPosition.y), Mathf.FloorToInt(feetPosition.z)] != 9 && world[Mathf.FloorToInt(headPosition.x), Mathf.FloorToInt(headPosition.y), Mathf.FloorToInt(headPosition.z)] != 9)
+        if (world[Mathf.FloorToInt(feetPosition.x), Mathf.FloorToInt(feetPosition.y), Mathf.FloorToInt(feetPosition.z)] != 9 && world[Mathf.FloorToInt(headPosition.x), Mathf.FloorToInt(headPosition.y), Mathf.FloorToInt(headPosition.z)] != 9 && world[Mathf.FloorToInt(feetPosition.x), Mathf.FloorToInt(feetPosition.y), Mathf.FloorToInt(feetPosition.z)] != 11 && world[Mathf.FloorToInt(headPosition.x), Mathf.FloorToInt(headPosition.y), Mathf.FloorToInt(headPosition.z)] != 11)
         {
-            if(lastMoveState == 1)
+            if(lastMoveState == 1 || lastMoveState == 4)
             {
                 lastMoveState = 3;              
                 return 3;
@@ -130,10 +150,19 @@ public class ServerPositionTracker : MonoBehaviour
 
         }
 
-        lastMoveState = 1;
-        return 1;
+        if(world[Mathf.FloorToInt(feetPosition.x), Mathf.FloorToInt(feetPosition.y), Mathf.FloorToInt(feetPosition.z)] == 9 || world[Mathf.FloorToInt(headPosition.x), Mathf.FloorToInt(headPosition.y), Mathf.FloorToInt(headPosition.z)] == 9)
+        {
+            lastMoveState = 1;
+            return 1;
 
-        
+        }
+        else
+        {
+            lastMoveState = 4;
+            return 4;
+        }
+
+
 
     }
 

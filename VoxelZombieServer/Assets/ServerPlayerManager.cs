@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using DarkRift;
 using DarkRift.Server;
 using UnityEngine;
+using UnityEngine.Networking;
 
 public class ServerPlayerManager : MonoBehaviour
 {
@@ -23,6 +24,10 @@ public class ServerPlayerManager : MonoBehaviour
     public float verticalWaterMaxSpeed;
     public float verticalWaterAcceleration;
 
+    public float horizontalLavaSpeed;
+    public float verticalLavaMaxSpeed;
+    public float verticalLavaAcceleration;
+
     public float waterExitSpeed;
 
     private int serverTickNumber = 0;
@@ -30,6 +35,9 @@ public class ServerPlayerManager : MonoBehaviour
     VoxelServer vServer;
     VoxelEngine vEngine;
 
+    private string playerStatsURL = "http://localhost/VoxelZombies/playerStats.php?";
+    private string updateStatsURL = "http://localhost/VoxelZombies/updateStats.php?";
+ 
 
     private void Awake()
     {
@@ -46,15 +54,73 @@ public class ServerPlayerManager : MonoBehaviour
 
         PlayerInformation newPlayerInfo = new PlayerInformation(newPlayer.transform, name, stateTag);
         PlayerDictionary.Add(PlayerID, newPlayerInfo);
+        PlayerDictionary[PlayerID].timeJoined = Time.time;
+
+        StartCoroutine(GetPlayerStats(name, PlayerID));
+
         InputDictionary.Add(PlayerID, new PlayerInputs(Vector3.zero, false));
         TickDic.Add(PlayerID, -1);
         PlayerVelocities.Add(PlayerID, Vector3.zero);
 
+    
+
         
+    }
+
+    IEnumerator GetPlayerStats(string name, ushort id)
+    {
+        WWWForm form = new WWWForm();
+
+        form.AddField("name", name);
+
+        UnityWebRequest stats_post = UnityWebRequest.Post(playerStatsURL, form);
+
+        yield return stats_post.SendWebRequest();
+
+        string returnText = stats_post.downloadHandler.text;
+
+        string[] stats = returnText.Split();
+
+        if(stats.Length == 4)
+        {
+            PlayerDictionary[id].kills = int.Parse(stats[0]);
+            PlayerDictionary[id].deaths = int.Parse(stats[1]);
+            PlayerDictionary[id].roundsWon = int.Parse(stats[2]);
+            PlayerDictionary[id].timeOnline = int.Parse(stats[3]);
+        }
+
+    }
+
+    IEnumerator PostPlayerStats(string name, int kills, int deaths, int roundsWon, int timeOnline)
+    {
+        WWWForm form = new WWWForm();
+
+        form.AddField("name", name);
+        form.AddField("kills", kills);
+        form.AddField("deaths", deaths);
+        form.AddField("rounds_won", roundsWon);
+        form.AddField("time_online", timeOnline);
+
+        UnityWebRequest stats_post = UnityWebRequest.Post(updateStatsURL, form);
+
+        yield return stats_post.SendWebRequest();
+
+        string returnText = stats_post.downloadHandler.text;
+
+        Debug.Log(returnText);
+
     }
 
     public void RemovePlayer(ushort PlayerID)
     {
+        string name = PlayerDictionary[PlayerID].name;
+        int kills = PlayerDictionary[PlayerID].kills;
+        int deaths = PlayerDictionary[PlayerID].deaths;
+        int roundsWon = PlayerDictionary[PlayerID].roundsWon;
+        int timeOnline = PlayerDictionary[PlayerID].timeOnline + (int)(Time.time - PlayerDictionary[PlayerID].timeJoined);
+
+        StartCoroutine(PostPlayerStats(name, kills, deaths, roundsWon, timeOnline));
+
         GameObject toDestroy = PlayerDictionary[PlayerID].transform.gameObject;
         PlayerDictionary.Remove(PlayerID);
         InputDictionary.Remove(PlayerID);
@@ -203,7 +269,7 @@ public class ServerPlayerManager : MonoBehaviour
             playerRB.velocity = inputs.moveVector * horizontalWaterSpeed;
             playerRB.velocity += yVel * Vector3.up;
         }
-        else if(inputs.moveState == 3) //exiting water
+        else if(inputs.moveState == 3) //exiting water/lava
         {
             if(inputs.Jump && playerTransform.GetComponent<ServerPositionTracker>().CheckWaterJump())
             {
@@ -219,6 +285,43 @@ public class ServerPlayerManager : MonoBehaviour
                 playerRB.velocity += yVel * Vector3.up;
             }
           
+        }
+        else if(inputs.moveState == 4)//lava movement
+        {
+            if (inputs.Jump)
+            {
+                if (yVel >= verticalLavaMaxSpeed)
+                {
+                    yVel = verticalLavaMaxSpeed;
+                }
+                else
+                {
+                    yVel += verticalLavaAcceleration * Time.fixedDeltaTime;
+                }
+            }
+            else
+            {
+                if (yVel < -verticalLavaMaxSpeed)
+                {
+                    yVel += verticalLavaAcceleration * Time.fixedDeltaTime;
+                    if (yVel > -verticalLavaMaxSpeed)
+                    {
+                        yVel = -verticalLavaMaxSpeed;
+                    }
+                }
+                else
+                {
+                    yVel -= verticalLavaAcceleration * Time.fixedDeltaTime;
+                    if (yVel < -verticalLavaMaxSpeed)
+                    {
+                        yVel = -verticalLavaMaxSpeed;
+                    }
+                }
+            }
+
+            playerRB.velocity = inputs.moveVector * horizontalLavaSpeed;
+            playerRB.velocity += yVel * Vector3.up;
+
         }
 
         playerTransform.GetComponent<HalfBlockDetector>().CheckSteps();
@@ -257,6 +360,17 @@ public class PlayerInformation
     public Transform transform;
     public string name;
     public ushort stateTag;
+
+    //stats, read these from the DB at player initialization
+    public int kills = 0;
+    public int deaths = 0;
+    public int roundsWon = 0;
+
+    //time online in seconds
+    public int timeOnline = 0;
+
+    //Time.time at time of initialization
+    public float timeJoined = 0;
 
     public PlayerInformation(Transform t, string playerName, ushort tag)
     {
