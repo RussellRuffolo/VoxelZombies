@@ -14,6 +14,10 @@ namespace Client
 
         private bool hasWaterJump = false;
 
+        public Collider boxCollider;
+
+        private List<Transform> collidingPlayers = new List<Transform>();
+
         void Awake()
         {
             world = GameObject.FindGameObjectWithTag("Network").GetComponent<ClientVoxelEngine>().world;
@@ -85,6 +89,58 @@ namespace Client
         public void UseWaterJump()
         {
             hasWaterJump = false;
+        }
+
+        private void OnTriggerEnter(Collider other)
+        {
+            if(other.CompareTag("NetworkPlayer"))
+            {
+                collidingPlayers.Add(other.transform);
+            }
+        }
+
+
+       private void OnTriggerStay(Collider other)
+        {
+            if (other.CompareTag("NetworkPlayer"))
+            {
+                if(!collidingPlayers.Contains(other.transform))
+                {
+                    collidingPlayers.Add(other.transform);
+                }
+            }
+        }
+
+        private void OnTriggerExit(Collider other)
+        {
+            if (other.CompareTag("NetworkPlayer"))
+            {
+                if (collidingPlayers.Contains(other.transform))
+                {
+                    collidingPlayers.Remove(other.transform);
+                }
+            }
+        }
+
+
+
+        public Vector3 GetCollisionVector()
+        {
+            Vector3 collisionVector = Vector3.zero;
+
+            if (collidingPlayers.Count == 0)
+            {
+                return collisionVector;
+            }
+
+           Vector2 xzPos = new Vector2(transform.position.x, transform.position.z);
+           foreach(Transform networkPlayer in collidingPlayers)
+            {
+                Vector2 otherXZ = new Vector2(networkPlayer.position.x, networkPlayer.position.z);
+                collisionVector += 1 / Mathf.Pow((Vector2.Distance(xzPos, otherXZ)), 2) * (transform.position - networkPlayer.position).normalized;
+            }
+
+            return collisionVector;
         }
     }
 

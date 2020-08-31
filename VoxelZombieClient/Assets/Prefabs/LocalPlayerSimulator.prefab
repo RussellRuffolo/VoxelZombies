@@ -65,6 +65,7 @@ MonoBehaviour:
   sensitivityX: 5
   sensitivityY: 5
   moveState: 0
+  camController: {fileID: 0}
   playerRB: {fileID: 4940741137197650718}
 --- !u!54 &4940741137197650718
 Rigidbody:

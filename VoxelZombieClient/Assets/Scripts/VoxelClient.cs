@@ -28,6 +28,7 @@ namespace Client
 
         public GameObject loginCamera;
 
+
         ClientChatManager chatManager;
 
         List<ChunkID> dirtiedChunks = new List<ChunkID>();
@@ -42,10 +43,11 @@ namespace Client
             vEngine = GetComponent<ClientVoxelEngine>();
             world = vEngine.world;
 
-            //Client.Connect(IPAddress.Parse("127.0.0.1"), 4296, false);
             Client.MessageReceived += MessageReceived;
 
             chatManager = GetComponent<ClientChatManager>();
+
+            //zombieCanvas.enabled = false;
         }
 
         void MessageReceived(object sender, MessageReceivedEventArgs e)
@@ -199,7 +201,9 @@ namespace Client
                             {
                                 LocalPlayer.GetComponent<MeshRenderer>().material.color = Color.red;
                             }
+
                             chatManager.SetInputColor(StateTag);
+
                             localPlayerTransform = LocalPlayer.transform;
                             localSimTransform = LocalPlayerSim.transform;
                         }
@@ -450,8 +454,7 @@ namespace Client
                     Debug.LogError("No Network Player corresponds to given ID: " + ID);
                 }
 
-                
-
+         
 
             }
         }
@@ -482,7 +485,6 @@ namespace Client
                     chatManager.SetInputColor(stateTag);
                     if (stateTag == 0)
                     {
-                        // ZombieCanvas.enabled = true;
                     }
                     else
                     {
@@ -505,6 +507,7 @@ namespace Client
             }
 
         }
+
 
         void ReceiveChat(MessageReceivedEventArgs e)
         {

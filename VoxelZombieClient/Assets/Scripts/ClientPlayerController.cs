@@ -32,10 +32,6 @@ namespace Client
         private float rotationY = 0f;
         private float rotationX = 0f;
 
-        private Vector3 lastMoveVector = Vector3.zero;
-        private bool lastJump = false;
-        private float lastRotation = 0;
-
         public ushort moveState = 0;
 
         VoxelClient vClient;
@@ -282,6 +278,11 @@ namespace Client
                 }
             
             }
+
+           // Vector3 collisionVector = pTracker.GetCollisionVector();
+
+           // playerRB.velocity += collisionVector;
+            //add collision logic here
 
         }
 

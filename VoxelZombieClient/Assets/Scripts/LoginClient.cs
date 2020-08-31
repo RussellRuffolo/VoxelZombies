@@ -4,7 +4,8 @@ using DarkRift;
 using DarkRift.Client;
 using DarkRift.Client.Unity;
 using UnityEngine.UI;
-using UnityEngine.SceneManagement;
+using System.Security.Cryptography;
+using System;
 using UnityEngine;
 
 namespace Client
@@ -114,12 +115,13 @@ namespace Client
         public void OnLogin()
         {
             if (nameText.text != "" && passwordText.text != "")
-            {          
+            {
+                string hashedPassword = HashPassword(passwordText.text);
 
                 using (DarkRiftWriter LoginWriter = DarkRiftWriter.Create())
                 {
                     LoginWriter.Write(nameText.text);
-                    LoginWriter.Write(passwordText.text);
+                    LoginWriter.Write(hashedPassword);
 
                     using (Message loginMessage = Message.Create(Tags.LOGIN_ATTEMPT_TAG, LoginWriter))
                     {
@@ -137,11 +139,13 @@ namespace Client
         public void OnCreateAccount()
         {
             if (nameText.text != "" && passwordText.text != "")
-            {   
+            {
+                string hashedPassword = HashPassword(passwordText.text);
+
                 using (DarkRiftWriter CreateAccountWriter = DarkRiftWriter.Create())
                 {
                     CreateAccountWriter.Write(nameText.text);
-                    CreateAccountWriter.Write(passwordText.text);
+                    CreateAccountWriter.Write(hashedPassword);
 
                     using (Message createAccountMessage = Message.Create(Tags.CREATE_ACCOUNT_TAG, CreateAccountWriter))
                     {
@@ -156,6 +160,35 @@ namespace Client
             }
         }
 
+        public string HashPassword(string password)
+        {
+            //get the password as bytes
+            byte[] passwordBytes = System.Text.Encoding.UTF8.GetBytes(password);
+            byte[] hashedPasswordBytes;
+
+            using (SHA256 mySHA256 = SHA256.Create())
+            {
+                hashedPasswordBytes = mySHA256.ComputeHash(passwordBytes);
+            }
+
+            string hashedPassword = ByteArrayToString(hashedPasswordBytes);
+            return hashedPassword;
+
+        }
+
+        public static string ByteArrayToString(byte[] ba)
+        {
+            return BitConverter.ToString(ba).Replace("-", "");
+        }
+
+
+
+
+
     }
+
+
+
+
 }
 

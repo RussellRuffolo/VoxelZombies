@@ -8,7 +8,7 @@ public class ServerPlayerManager : MonoBehaviour
 {
     public GameObject PlayerPrefab;
 
-    public Dictionary<ushort, Transform> PlayerDictionary = new Dictionary<ushort, Transform>();
+    public Dictionary<ushort, PlayerInformation> PlayerDictionary = new Dictionary<ushort, PlayerInformation>();
     public Dictionary<ushort, PlayerInputs> InputDictionary = new Dictionary<ushort, PlayerInputs>();
 
     public Dictionary<ushort, int> TickDic = new Dictionary<ushort, int>();
@@ -37,14 +37,15 @@ public class ServerPlayerManager : MonoBehaviour
         vEngine = GetComponent<VoxelEngine>();
     }
 
-    public void AddPlayer(ushort PlayerID, ushort stateTag, float xPos, float yPos, float zPos)
+    public void AddPlayer(ushort PlayerID, ushort stateTag, float xPos, float yPos, float zPos, string name)
     {
         Vector3 spawnPosition = new Vector3((float)xPos, (float)yPos, (float)zPos);
 
         GameObject newPlayer = GameObject.Instantiate(PlayerPrefab, spawnPosition, Quaternion.identity);
         newPlayer.GetComponent<ServerPositionTracker>().ID = PlayerID;
-        newPlayer.GetComponent<ServerPositionTracker>().stateTag = stateTag;
-        PlayerDictionary.Add(PlayerID, newPlayer.transform);
+
+        PlayerInformation newPlayerInfo = new PlayerInformation(newPlayer.transform, name, stateTag);
+        PlayerDictionary.Add(PlayerID, newPlayerInfo);
         InputDictionary.Add(PlayerID, new PlayerInputs(Vector3.zero, false));
         TickDic.Add(PlayerID, -1);
         PlayerVelocities.Add(PlayerID, Vector3.zero);
@@ -54,7 +55,7 @@ public class ServerPlayerManager : MonoBehaviour
 
     public void RemovePlayer(ushort PlayerID)
     {
-        GameObject toDestroy = PlayerDictionary[PlayerID].gameObject;
+        GameObject toDestroy = PlayerDictionary[PlayerID].transform.gameObject;
         PlayerDictionary.Remove(PlayerID);
         InputDictionary.Remove(PlayerID);
         Destroy(toDestroy);
@@ -65,7 +66,7 @@ public class ServerPlayerManager : MonoBehaviour
         using (DarkRiftReader reader = e.GetMessage().GetReader())
         {
             ushort clientID = e.Client.ID;
-            Transform targetPlayer = PlayerDictionary[clientID];
+            Transform targetPlayer = PlayerDictionary[clientID].transform;
             Rigidbody playerRB = targetPlayer.GetComponent<Rigidbody>();
 
             //allow this player to be moved and reassign its velocity
@@ -118,13 +119,16 @@ public class ServerPlayerManager : MonoBehaviour
             //store the players velocity and remove it from simulation
            PlayerVelocities[clientID] = playerRB.velocity;
             playerRB.isKinematic = true;
+
+            e.GetMessage().Dispose();
+            reader.Dispose();            
             
         }
     }
 
     private void ApplyInputs(ushort id, PlayerInputs inputs)
     {
-        Transform playerTransform = PlayerDictionary[id];
+        Transform playerTransform = PlayerDictionary[id].transform;
         Rigidbody playerRB = playerTransform.GetComponent<Rigidbody>();
 
         float yVel = playerRB.velocity.y;
@@ -219,6 +223,10 @@ public class ServerPlayerManager : MonoBehaviour
 
         playerTransform.GetComponent<HalfBlockDetector>().CheckSteps();
 
+       // Vector3 collisionVector = playerTransform.GetComponent<ServerPositionTracker>().GetCollisionVector();
+
+        //playerRB.velocity += collisionVector;
+
     }
 
 }
@@ -241,5 +249,19 @@ public class PlayerInputs
         ClientTickNumber = 0;
         ServerTickNumber = 0;
 
+    }
+}
+
+public class PlayerInformation
+{
+    public Transform transform;
+    public string name;
+    public ushort stateTag;
+
+    public PlayerInformation(Transform t, string playerName, ushort tag)
+    {
+        transform = t;
+        name = playerName;
+        stateTag = tag;
     }
 }

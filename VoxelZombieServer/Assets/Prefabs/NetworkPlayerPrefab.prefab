@@ -16,7 +16,7 @@ GameObject:
   - component: {fileID: 5642323224270285528}
   - component: {fileID: 8766112764280615478}
   - component: {fileID: 344401052835935590}
-  m_Layer: 0
+  m_Layer: 8
   m_Name: NetworkPlayerPrefab
   m_TagString: Player
   m_Icon: {fileID: 0}
@@ -115,6 +115,7 @@ MonoBehaviour:
   minMoveDelta: 0.01
   ID: 0
   stateTag: 0
+  collidingPlayers: []
 --- !u!65 &5642323224270285528
 BoxCollider:
   m_ObjectHideFlags: 0
@@ -166,6 +167,7 @@ GameObject:
   m_Component:
   - component: {fileID: 7102039818695759451}
   - component: {fileID: 2259901598353016219}
+  - component: {fileID: 6348252781779412789}
   m_Layer: 4
   m_Name: PlayerWaterManager
   m_TagString: Untagged
@@ -200,3 +202,16 @@ BoxCollider:
   serializedVersion: 2
   m_Size: {x: 0.708, y: 1.76, z: 0.707}
   m_Center: {x: 0, y: -0.08, z: 0}
+--- !u!114 &6348252781779412789
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 6115718764223257091}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 57487143735d77f4f93d03549a32fd71, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
+  pTracker: {fileID: -5455658024287241082}

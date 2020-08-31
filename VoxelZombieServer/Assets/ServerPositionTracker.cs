@@ -1,5 +1,6 @@
 ﻿using System.Collections;
 using System.Collections.Generic;
+using UnityEngine.Networking;
 using UnityEngine;
 
 public class ServerPositionTracker : MonoBehaviour
@@ -7,8 +8,6 @@ public class ServerPositionTracker : MonoBehaviour
     public float minMoveDelta;
     private Vector3 lastPosition;
     public ushort ID;
-
-    public ushort stateTag;
 
     VoxelServer vServer;
 
@@ -24,6 +23,10 @@ public class ServerPositionTracker : MonoBehaviour
     private ushort lastMoveState = 0;
 
     private bool hasWaterJump = false;
+
+    public List<Transform> collidingPlayers = new List<Transform>();
+
+    private string killDataURL = "http://localhost/VoxelZombies/killData.php?";
 
     private void Awake()
     {
@@ -54,20 +57,40 @@ public class ServerPositionTracker : MonoBehaviour
         if(collision.transform.CompareTag("Player"))
         {
             ServerPositionTracker otherTracker = collision.transform.GetComponent<ServerPositionTracker>();
-            if (stateTag == 1)
+            if (pManager.PlayerDictionary[ID].stateTag == 1)
             {
             
-                if(otherTracker.stateTag == 0)
-                {
-                    Debug.Log("Infection!");
+                if(pManager.PlayerDictionary[otherTracker.ID].stateTag == 0)
+                {                
                     vServer.UpdatePlayerState(otherTracker.ID, 1);
                     vServer.SendPublicChat(vServer.playerNames[otherTracker.ID] + " was infected by " + vServer.playerNames[ID] + "!", 2);
                     gManager.CheckZombieWin();
+
+                    StartCoroutine(PostKillData(ID, otherTracker.ID));
+
                 }
             }     
         }     
     }
 
+    IEnumerator PostKillData(ushort zombieID, ushort humanID)
+    {
+        string humanName = pManager.PlayerDictionary[humanID].name;
+        string zombieName = pManager.PlayerDictionary[zombieID].name;
+
+        WWWForm form = new WWWForm();
+
+        form.AddField("humanName", humanName);
+        form.AddField("zombieName", zombieName);
+
+        UnityWebRequest account_post = UnityWebRequest.Post(killDataURL, form);
+
+        yield return account_post.SendWebRequest();
+
+        string returnText = account_post.downloadHandler.text;
+
+        Debug.Log(returnText);
+    }
 
 
     public ushort CheckPlayerState()
@@ -97,8 +120,7 @@ public class ServerPositionTracker : MonoBehaviour
         {
             if(lastMoveState == 1)
             {
-                lastMoveState = 3;
-                Debug.Log("Exit water");
+                lastMoveState = 3;              
                 return 3;
             }
 
@@ -129,5 +151,26 @@ public class ServerPositionTracker : MonoBehaviour
     public void UseWaterJump()
     {
         hasWaterJump = false;
+    }
+
+
+
+    public Vector3 GetCollisionVector()
+    {
+        Vector3 collisionVector = Vector3.zero;
+
+        if (collidingPlayers.Count == 0)
+        {
+            return collisionVector;
+        }
+
+        Vector2 xzPos = new Vector2(transform.position.x, transform.position.z);
+        foreach (Transform networkPlayer in collidingPlayers)
+        {
+            Vector2 otherXZ = new Vector2(networkPlayer.position.x, networkPlayer.position.z);
+            collisionVector += 1 / Mathf.Pow((Vector2.Distance(xzPos, otherXZ)), 2) * (transform.position - networkPlayer.position).normalized;
+        }
+
+        return collisionVector;
     }
 }

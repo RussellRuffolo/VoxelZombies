@@ -16,9 +16,9 @@ namespace Client
 
         public bool chatEnabled;
 
-        private List<VoxelMessage> chatLog = new List<VoxelMessage>();
+        private List<string> chatLog = new List<string>();
 
-        public Text[] DisplayedLogs = new Text[8];
+        public Text DisplayedLogs;
 
         public float chatFadeTime;
 
@@ -40,6 +40,8 @@ namespace Client
             logPanel.enabled = false;
             inputPanel.enabled = false;
             chatEnabled = false;
+
+            DisplayChats();
 
            // Debug.Log("Input text size delta is: " + inputText.rectTransform.sizeDelta.x);
           //  Debug.Log("Scale factor is: " + GetScale(Screen.width, Screen.height, referenceResolution, whMatch));
@@ -80,7 +82,7 @@ namespace Client
 
                         inputPanel.enabled = false;
                         chatEnabled = false;
-                        UpdateDisplayedChats();
+                        DisplayChats();
                     
                     }
                     else
@@ -91,12 +93,7 @@ namespace Client
                 }
                 inputText.text = inputMessage;
                 
-                /*
-                while (CalculateLengthOfMessage(inputText.text, inputText) > (inputText.rectTransform.sizeDelta.x * GetScale(Screen.width, Screen.height, referenceResolution, whMatch)))
-                {
-                    inputText.text = inputText.text.Remove(0, 1);
-                }
-                */
+       
               
             
                 while (CalculateLengthOfMessage(inputText.text, inputText) > (inputText.rectTransform.sizeDelta.x ))
@@ -114,12 +111,7 @@ namespace Client
                     chatEnabled = true;                  
                     inputPanel.enabled = true;                    
                     logPanel.enabled = true;
-
-                    for (int i = 0; i < DisplayedLogs.Length; i++)
-                    {
-                        DisplayedLogs[i].enabled = true;
-                    }
-                    UpdateDisplayedChats();
+                    DisplayChats();
 
                 }
             }
@@ -134,59 +126,41 @@ namespace Client
 
             inputPanel.enabled = false;
             chatEnabled = false;
-            UpdateDisplayedChats();
+            DisplayChats();
                       
         }
 
         public void DisplayMessage(string newMessage, ushort colorTag)
         {
-            Color messageColor;
+            string message = "";
+            string colorString = "";
+
+  
 
             switch(colorTag)
             {
                 case 0: //human messages
-                    messageColor = Color.white;
+                    colorString = "white";
                     break;
                 case 1: //zombie messages
-                    messageColor = Color.red;
+                    colorString = "red";
                     break;
                 case 2: //system messages;
-                    messageColor = Color.yellow;
+                    colorString = "yellow";
                     break;
                 default: //default to system
-                    messageColor = Color.yellow;
+                    colorString = "yellow";
                     break;
 
             }
 
-         
-            float messageLength = CalculateLengthOfMessage(newMessage, DisplayedLogs[0]);
-
-             //int numLines = Mathf.FloorToInt(messageLength / (DisplayedLogs[0].rectTransform.sizeDelta.x * GetScale(Screen.width, Screen.height, referenceResolution, whMatch))) + 1;
-            int numLines = Mathf.FloorToInt(messageLength / (DisplayedLogs[0].rectTransform.sizeDelta.x)) + 1;
-
-            Debug.Log("Message Length: " + messageLength + " For message: " + newMessage + " Gives num lines: " + numLines);
-
-            VoxelMessage message = new VoxelMessage(newMessage, messageColor, numLines);
-
-
-            chatLog.Insert(0, message);
-
-            int chatHeight = 0;
-            for (int i = 0; i < DisplayedLogs.Length && i < chatLog.Count; i++)
-            {
-             
-                DisplayedLogs[i].text = chatLog[i].text;                
-                DisplayedLogs[i].color = chatLog[i].color;
-                int messageHeight = 15 * chatLog[i].numLines;
-                DisplayedLogs[i].rectTransform.SetSizeWithCurrentAnchors(RectTransform.Axis.Vertical, messageHeight);
-                DisplayedLogs[i].rectTransform.anchoredPosition = new Vector2(DisplayedLogs[i].rectTransform.anchoredPosition.x, chatHeight);
-                chatHeight += messageHeight;
-            }
+            message = "<color=" + colorString + ">" + newMessage + "</color>\n";     
+            
+            chatLog.Add(message);
 
             chatsDisplayed++;
 
-            UpdateDisplayedChats();
+            DisplayChats();
 
             StartCoroutine(ChatDelay());
         
@@ -211,68 +185,49 @@ namespace Client
             return totalLength;
         }
 
-        string AddNewLines(string message, Text chatText)
-        {
-            string newMessage = "";
-
-            float length = 0;
-
-            Font myFont = chatText.font;  //chatText is my Text component
-            CharacterInfo characterInfo = new CharacterInfo();
-
-            char[] arr = message.ToCharArray();
-
-            for(int i = 0; i < arr.Length; i++)
+        
+        public void DisplayChats()
+        {           
+            logPanel.enabled = true;
+            DisplayedLogs.enabled = true;
+            DisplayedLogs.text = "";
+            if(chatEnabled)
             {
-                myFont.GetCharacterInfo(arr[i], out characterInfo, chatText.fontSize);
-
-                length += characterInfo.advance;
-
-                /*
-                if (length > chatText.rectTransform.sizeDelta.x * GetScale(Screen.width, Screen.height, referenceResolution, whMatch))
+                for (int i = 0; i < chatLog.Count; i++)
                 {
-                    length -= chatText.rectTransform.sizeDelta.x * GetScale(Screen.width, Screen.height, referenceResolution, whMatch);
-                    newMessage += '\n';
+                    DisplayedLogs.text += chatLog[i];                  
+
                 }
-                */
-                
-                
-                if (length > chatText.rectTransform.sizeDelta.x)
-                {
-                    length -= chatText.rectTransform.sizeDelta.x;
-                    newMessage += '\n';
-                }
-               
-                newMessage += arr[i];
+
             }
-
-            return newMessage;
-        }
-
-        public void UpdateDisplayedChats()
-        {
-            if(chatEnabled == false)
+            else
             {
-                int chatHeight = 0;
-                logPanel.enabled = true;
-
-                for (int i = 0; i < chatsDisplayed; i++)
+                
+                int startIndex = chatLog.Count -  chatsDisplayed;
+                if(startIndex != chatLog.Count)
                 {
-                    DisplayedLogs[i].enabled = true;
-                    DisplayedLogs[i].rectTransform.anchoredPosition = new Vector2(DisplayedLogs[i].rectTransform.anchoredPosition.x, chatHeight);
-                    chatHeight += chatLog[i].numLines * 15;
+                    for (int i = startIndex; i < chatLog.Count; i++)
+                    {
+                        DisplayedLogs.text += chatLog[i];
+
+                    }
                 }
-                for (int i = chatsDisplayed; i < DisplayedLogs.Length; i++)
+                else
                 {
-                    DisplayedLogs[i].enabled = false;
+                    logPanel.enabled = false;
+                    DisplayedLogs.enabled = false;
                 }
-
-                logPanel.GetComponent<RectTransform>().SetSizeWithCurrentAnchors(RectTransform.Axis.Vertical, chatHeight);
-            }
-
-            
           
+
+            }
+
+            logPanel.rectTransform.sizeDelta = new Vector2(logPanel.rectTransform.sizeDelta.x, DisplayedLogs.preferredHeight);
+
+
+
         }
+
+
 
         private float GetScale(int width, int height, Vector2 scalerReferenceResolution, float scalerMatchWidthOrHeight)
         {
@@ -286,7 +241,7 @@ namespace Client
             if(chatsDisplayed > 0)
             {
                 chatsDisplayed--;
-                UpdateDisplayedChats();
+                DisplayChats();
             }
         }
 
@@ -297,10 +252,10 @@ namespace Client
             switch (colorTag)
             {
                 case 0: //system messages
-                    messageColor = Color.yellow;
+                    messageColor = Color.white;
                     break;
                 case 1: //human messages
-                    messageColor = Color.white;
+                    messageColor = Color.red;
                     break;            
                 default: //default to system
                     messageColor = Color.yellow;
@@ -311,23 +266,11 @@ namespace Client
             playerState = colorTag;
 
             inputText.color = messageColor;
-
+            
         }
     }
 
-    public class VoxelMessage
-    {
-        public string text;
-        public Color color;
-        public int numLines;
 
-        public VoxelMessage(string messageText, Color messageColor, int numberLines)
-        {
-            text = messageText;
-            color = messageColor;
-            numLines = numberLines;
-        }
-    }
    
 }
 

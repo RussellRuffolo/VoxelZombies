@@ -1,6 +1,7 @@
 ﻿using System.Collections;
 using System.Collections.Generic;
 using UnityEngine;
+using UnityEngine.Networking;
 
 public class ServerGameManager : MonoBehaviour
 {
@@ -17,7 +18,7 @@ public class ServerGameManager : MonoBehaviour
     MapData map1, map2, map3;
     public int map1Votes, map2Votes, map3Votes;
 
-    //TODO- MAP VOTING
+    private string roundWonURL = "http://localhost/VoxelZombies/roundWon.php?";
 
     private void Awake()
     {
@@ -85,10 +86,40 @@ public class ServerGameManager : MonoBehaviour
             else if (RoundTime <= 0)
             {
                 vServer.SendPublicChat("Humans win!", 2);
+                RecordWinners();
                 EndRound();
 
             }
         }
+
+    }
+
+    void RecordWinners()
+    {
+        foreach(PlayerInformation p in pMananger.PlayerDictionary.Values)
+        {
+            //If this player was human at the end of the round
+            if(p.stateTag == 0)
+            {
+                StartCoroutine(PostRoundWon(p.name));
+            }
+        }
+    }
+
+    IEnumerator PostRoundWon(string name)
+    {
+
+        WWWForm form = new WWWForm();
+
+        form.AddField("name", name);
+
+        UnityWebRequest account_post = UnityWebRequest.Post(roundWonURL, form);
+
+        yield return account_post.SendWebRequest();
+
+        string returnText = account_post.downloadHandler.text;
+
+        Debug.Log(returnText);
 
     }
 
@@ -100,25 +131,29 @@ public class ServerGameManager : MonoBehaviour
 
     public void CheckZombieWin()
     {
-        foreach(Transform playerTransform in pMananger.PlayerDictionary.Values)
+        if(pMananger.PlayerDictionary.Count > 0)
         {
-            if(playerTransform.GetComponent<ServerPositionTracker>().stateTag == 0)
+            foreach (PlayerInformation pInfo in pMananger.PlayerDictionary.Values)
             {
-                //If a player is a human return- zombies haven't won yet
-                return;
+                if (pInfo.stateTag == 0)
+                {
+                    //If a player is a human return- zombies haven't won yet
+                    return;
+                }
             }
-        }
 
-        vServer.SendPublicChat("Zombies win!", 2);
-        EndRound();
+            vServer.SendPublicChat("Zombies win!", 2);
+            EndRound();
+        }
+  
         //if no players were human then zombies win
     }
 
     public void CheckNoZombies()
     {
-        foreach (Transform playerTransform in pMananger.PlayerDictionary.Values)
+        foreach (PlayerInformation pInfo in pMananger.PlayerDictionary.Values)
         {
-            if (playerTransform.GetComponent<ServerPositionTracker>().stateTag == 1)
+            if (pInfo.stateTag == 1)
             {
                 //If a player is a human return- zombies haven't won yet
                 return;

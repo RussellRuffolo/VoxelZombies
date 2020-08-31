@@ -457,7 +457,7 @@ namespace Client
                 if(x < vEngine.Length && y < vEngine.Height && z < vEngine.Width)
                 {
                     ushort selectTag = currentWorld[x, y, z];
-                    Debug.Log("Selected: " + selectTag + "at x: " + x + " y: " + y + " z: " + z);
+
                     if (selectTag != 7 && selectTag != 0 && selectTag != 9 && selectTag != 11)
                     {
                         placeBlockTag = selectTag;

@@ -786,7 +786,7 @@ public class Chunk : MonoBehaviour
                     }
                     else { bottom = this[x, y - 1, z]; }
 
-                    if (_transparentBlockIDs.Contains(bottom) && bottom != voxelType)
+                    if ((_transparentBlockIDs.Contains(bottom) && bottom != voxelType) || bottom == 44)
                     {
                         if (voxelType == 9 || voxelType == 11)
                         {

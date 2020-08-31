@@ -1,10 +1,12 @@
 ﻿using System.Collections;
 using System.Collections.Generic;
+using System;
 using DarkRift;
 using DarkRift.Server;
 using DarkRift.Server.Unity;
 using UnityEngine;
 using UnityEngine.Networking;
+using System.Security.Cryptography;
 
 public class VoxelServer : MonoBehaviour
 {
@@ -38,6 +40,8 @@ public class VoxelServer : MonoBehaviour
     private string addAccountURL = "http://localhost/VoxelZombies/addAccount.php?";
 
     private string loginAttemptURL = "http://localhost/VoxelZombies/loginAttempt.php?";
+
+    private string saltURL = "http://localhost/VoxelZombies/getSalt.php?";
 
 
     public Dictionary<ushort, string> playerNames = new Dictionary<ushort, string>();
@@ -78,16 +82,18 @@ public class VoxelServer : MonoBehaviour
     }
 
     void PlayerDisconnected(object sender, ClientDisconnectedEventArgs e)
-    {
-        bool wasHuman = false;
-        if(PlayerManager.PlayerDictionary[e.Client.ID].GetComponent<ServerPositionTracker>().stateTag == 0)
-        {
-            wasHuman = true;
-        }
-
-        SendPublicChat(playerNames[e.Client.ID] + " has left the game.", 2);
+    {     
+       
         if(PlayerManager.PlayerDictionary.ContainsKey(e.Client.ID))
         {
+            bool wasHuman = false;
+            if (PlayerManager.PlayerDictionary[e.Client.ID].stateTag == 0)
+            {
+                wasHuman = true;
+            }
+
+            SendPublicChat(playerNames[e.Client.ID] + " has left the game.", 2);
+
             ushort playerID = e.Client.ID;
             PlayerManager.RemovePlayer(playerID);
             loadedPlayers.Remove(e.Client);
@@ -106,16 +112,18 @@ public class VoxelServer : MonoBehaviour
                 }
             }
 
+            if (wasHuman)
+            {
+                gManager.CheckZombieWin();
+            }
+            else
+            {
+                gManager.CheckNoZombies();
+            }
+
         }
 
-        if(wasHuman)
-        {
-            gManager.CheckZombieWin();
-        }
-        else
-        {
-            gManager.CheckNoZombies();
-        }
+   
 
 
        
@@ -128,26 +136,32 @@ public class VoxelServer : MonoBehaviour
            if(e.Tag == INPUT_TAG)
            {
                 PlayerManager.ReceiveInputs(e);
+
            }
            else if(e.Tag == BLOCK_EDIT_TAG)
            {
                 ApplyBlockEdit(e);
-           }          
+
+            }          
            else if(e.Tag == MAP_RELOADED_TAG)
             {
                 ReInitializePlayer(e);
+     
             }
            else if(e.Tag == LOGIN_ATTEMPT_TAG)
             {
                 HandleLogin(e);
+       
             }
            else if(e.Tag == CHAT_TAG)
             {
                 HandlePlayerChat(e);
+  
             }
            else if(e.Tag == CREATE_ACCOUNT_TAG)
             {
                 TryCreateAccount(e);
+    
             }
         }
 
@@ -225,6 +239,8 @@ public class VoxelServer : MonoBehaviour
                         SendPrivateChat("The command: " + commands[0] + " does not exist. Use /commands to see available commands.", 2, e.Client.ID);
                         break;
                 }
+
+           
                 
             }
             else
@@ -234,7 +250,7 @@ public class VoxelServer : MonoBehaviour
                 SendPublicChat(namedChatMessage, colorTag);
             }
 
-        
+
         }
     }
 
@@ -258,14 +274,14 @@ public class VoxelServer : MonoBehaviour
 
             chatWriter.Write(chatMessage);
             chatWriter.Write(colorTag);
-
+            Debug.Log("Chat message is: " + chatMessage);
             using (Message newChatMessage = Message.Create(CHAT_TAG, chatWriter))
             {
                 foreach (IClient c in loadedPlayers)
                 {
                     c.SendMessage(newChatMessage, SendMode.Reliable);
-                }
-            }
+                }                
+            }          
         }
     }
 
@@ -296,15 +312,39 @@ public class VoxelServer : MonoBehaviour
             string password = reader.ReadString();
 
             StartCoroutine(PostNewAccount(userName, password, e));
+
+  
         }
     }
 
     IEnumerator PostNewAccount(string userName, string password, MessageReceivedEventArgs e)
     {
+        //create a salt
+        byte[] salt = new byte[32]; //change this to be the length of the hash later
+        RNGCryptoServiceProvider CSPRNG = new RNGCryptoServiceProvider();
+        CSPRNG.GetBytes(salt);
+
+        //get the password as bytes
+        byte[] passwordBytes = System.Text.Encoding.UTF8.GetBytes(password);
+
+        //prepend the salt to the password and hash the result
+        byte[] saltedPassword = CombineByteArrays(salt, passwordBytes);
+        byte[] hashValue;
+
+        using (SHA256 mySHA256 = SHA256.Create())
+        {
+            hashValue = mySHA256.ComputeHash(saltedPassword);
+        }
+        
+        string hashedPassword = ByteArrayToString(hashValue);
+        string saltString = ByteArrayToString(salt);
+      
+      
+
         WWWForm form = new WWWForm();
 
         form.AddField("name", userName);
-        form.AddField("password", password);
+        form.AddField("password", saltString + hashedPassword);
 
         UnityWebRequest account_post = UnityWebRequest.Post(addAccountURL, form);
 
@@ -336,25 +376,91 @@ public class VoxelServer : MonoBehaviour
             using (Message accountMessage = Message.Create(CREATE_ACCOUNT_TAG, createAccountWriter))
             {
                 e.Client.SendMessage(accountMessage, SendMode.Reliable);
+       
             }
 
         }
     }
 
-  
+    public static byte[] CombineByteArrays(byte[] first, byte[] second)
+    {
+        byte[] bytes = new byte[first.Length + second.Length];
+        Buffer.BlockCopy(first, 0, bytes, 0, first.Length);
+        Buffer.BlockCopy(second, 0, bytes, first.Length, second.Length);
+        return bytes;
+    }
+
+    public static string ByteArrayToString(byte[] ba)
+    {
+        return BitConverter.ToString(ba).Replace("-", "");
+    }
+
+    public static byte[] StringToByteArray(String hex)
+    {
+        int NumberChars = hex.Length;
+        byte[] bytes = new byte[NumberChars / 2];
+        for (int i = 0; i < NumberChars; i += 2)
+            bytes[i / 2] = Convert.ToByte(hex.Substring(i, 2), 16);
+        return bytes;
+    }
+
+
 
     IEnumerator PostLoginAttempt(string name, string password, MessageReceivedEventArgs e)
     {
-        WWWForm form = new WWWForm();
+        //get salt first
+        WWWForm saltForm = new WWWForm();
+        saltForm.AddField("name", name);
+        UnityWebRequest saltPost = UnityWebRequest.Post(saltURL, saltForm);
+        yield return saltPost.SendWebRequest();
 
-        form.AddField("name", name);
-        form.AddField("password", password);
+        string returnSaltText = saltPost.downloadHandler.text;
 
-        UnityWebRequest loginPost = UnityWebRequest.Post(loginAttemptURL, form);
+        string returnText = "";
 
-        yield return loginPost.SendWebRequest();
+        if(returnSaltText.Length == 128)
+        {
+            string saltString = returnSaltText.Substring(0, 64);
+            string hashedPassword = returnSaltText.Substring(64, 64);
 
-        string returnText = loginPost.downloadHandler.text;
+            byte[] salt = StringToByteArray(saltString);
+
+            //get the password as bytes
+            byte[] passwordBytes = System.Text.Encoding.UTF8.GetBytes(password);
+
+            //prepend the salt to the password and hash the result
+            byte[] saltedPassword = CombineByteArrays(salt, passwordBytes);
+            byte[] hashValue;
+
+            using (SHA256 mySHA256 = SHA256.Create())
+            {
+                hashValue = mySHA256.ComputeHash(saltedPassword);
+            }
+
+            string newHashedPassword = ByteArrayToString(hashValue);
+
+            if(newHashedPassword == hashedPassword)
+            {
+                returnText = "Login Succesful";
+            }
+            else
+            {
+                Debug.Log("New hashed password: " + newHashedPassword + " in db: " + hashedPassword);
+                returnText = "Password Mismatch";
+            }
+
+        }
+        else
+        {
+            Debug.Log("Error: " + saltPost.downloadHandler.text);
+            if(saltPost.downloadHandler.text == "No Username")
+            {
+                returnText = "No Username";
+            }
+        }
+
+
+        
 
         Debug.Log(returnText);
 
@@ -364,7 +470,7 @@ public class VoxelServer : MonoBehaviour
         {
             playerNames.Add(e.Client.ID, name);
 
-            InitializePlayer(e);
+            InitializePlayer(e, name);
 
             SendPublicChat(playerNames[e.Client.ID] + " has joined the fray.", 2);
 
@@ -418,7 +524,7 @@ public class VoxelServer : MonoBehaviour
     //On succesful login player is initialized.
     //New player is added to PlayerManager
     //All players are told about new player
-    private void InitializePlayer(MessageReceivedEventArgs e)
+    private void InitializePlayer(MessageReceivedEventArgs e, string name)
     {  
         ushort stateTag;
         if (gManager.inStartTime)
@@ -429,7 +535,7 @@ public class VoxelServer : MonoBehaviour
         {
             stateTag = 1;
         }
-        PlayerManager.AddPlayer(e.Client.ID, stateTag, vEngine.currentMap.SpawnX, vEngine.currentMap.SpawnY, vEngine.currentMap.SpawnZ);
+        PlayerManager.AddPlayer(e.Client.ID, stateTag, vEngine.currentMap.SpawnX, vEngine.currentMap.SpawnY, vEngine.currentMap.SpawnZ, name);
 
         //This message is to the new player and tells them the ID, state, position, and name of every player
         using (DarkRiftWriter PlayerWriter = DarkRiftWriter.Create())
@@ -439,10 +545,10 @@ public class VoxelServer : MonoBehaviour
             
             foreach (ushort playerID in PlayerManager.PlayerDictionary.Keys)
             {                
-                Transform playerTransform = PlayerManager.PlayerDictionary[playerID];
+                Transform playerTransform = PlayerManager.PlayerDictionary[playerID].transform;
 
                 PlayerWriter.Write(playerID);
-                PlayerWriter.Write(playerTransform.GetComponent<ServerPositionTracker>().stateTag);
+                PlayerWriter.Write(PlayerManager.PlayerDictionary[playerID].stateTag);
                 PlayerWriter.Write(playerTransform.position.x);
                 PlayerWriter.Write(playerTransform.position.y);
                 PlayerWriter.Write(playerTransform.position.z);
@@ -458,6 +564,7 @@ public class VoxelServer : MonoBehaviour
             using (Message playerMessage = Message.Create(PLAYER_INIT_TAG, PlayerWriter))
             {
                 e.Client.SendMessage(playerMessage, SendMode.Reliable);
+            
               
             }
 
@@ -469,7 +576,7 @@ public class VoxelServer : MonoBehaviour
         {
             ushort playerID = e.Client.ID;
 
-            Transform playerTransform = PlayerManager.PlayerDictionary[playerID];
+            Transform playerTransform = PlayerManager.PlayerDictionary[playerID].transform;
 
             NewPlayerWriter.Write(playerID);
             NewPlayerWriter.Write(playerTransform.position.x);
@@ -480,7 +587,7 @@ public class VoxelServer : MonoBehaviour
             NewPlayerWriter.Write(playerTransform.rotation.eulerAngles.y);
             NewPlayerWriter.Write(playerTransform.rotation.eulerAngles.z);
 
-            NewPlayerWriter.Write(playerTransform.GetComponent<ServerPositionTracker>().stateTag);
+            NewPlayerWriter.Write(PlayerManager.PlayerDictionary[playerID].stateTag);
 
             NewPlayerWriter.Write(playerNames[playerID]);
 
@@ -494,6 +601,7 @@ public class VoxelServer : MonoBehaviour
                      
                     }
                 }
+
             }
 
         }
@@ -512,8 +620,9 @@ public class VoxelServer : MonoBehaviour
             using (Message blockEditMessage = Message.Create(BLOCK_EDIT_TAG, BlockEditsWriter))
             {             
                 e.Client.SendMessage(blockEditMessage, SendMode.Reliable);
-                //Debug.Log("Sent Block Edit Message");                
+             
             }
+
         }
 
      
@@ -548,9 +657,11 @@ public class VoxelServer : MonoBehaviour
                     foreach (IClient c in loadedPlayers)
                     {
                         c.SendMessage(blockEditMessage, SendMode.Reliable);
-                        //Debug.Log("Sent Block Edit Message");
+
                     }
                 }
+
+
             }
         }
         else
@@ -561,8 +672,10 @@ public class VoxelServer : MonoBehaviour
 
                 using (Message mapMessage = Message.Create(MAP_TAG, mapWriter))
                 {
-                    e.Client.SendMessage(mapMessage, SendMode.Reliable);           
+                    e.Client.SendMessage(mapMessage, SendMode.Reliable);
+
                 }
+
             }
         }
 
@@ -635,13 +748,14 @@ public class VoxelServer : MonoBehaviour
                     {
                         foreach (IClient c in loadedPlayers)
                         {
-                            c.SendMessage(blockEditMessage, SendMode.Reliable);
-                            //Debug.Log("Sent Block Edit Message");
+                            c.SendMessage(blockEditMessage, SendMode.Reliable);                            
                         }
+
                     }
 
                 }
             }
+
 
         }
     }
@@ -666,7 +780,9 @@ public class VoxelServer : MonoBehaviour
                     }
 
                 }
+ 
             }
+
 
         }
     }
@@ -698,6 +814,7 @@ public class VoxelServer : MonoBehaviour
            
 
                 }
+
             }
 
         }
@@ -706,7 +823,7 @@ public class VoxelServer : MonoBehaviour
 
     public void UpdatePlayerState(ushort ID, ushort stateTag)
     {
-        PlayerManager.PlayerDictionary[ID].GetComponent<ServerPositionTracker>().stateTag = stateTag;
+        PlayerManager.PlayerDictionary[ID].stateTag = stateTag;
         Color newColor;
 
         if(stateTag == 0)
@@ -718,19 +835,20 @@ public class VoxelServer : MonoBehaviour
             newColor = Color.red;
         }
 
-        PlayerManager.PlayerDictionary[ID].GetComponent<MeshRenderer>().material.color = newColor;
+        PlayerManager.PlayerDictionary[ID].transform.GetComponent<MeshRenderer>().material.color = newColor;
         using (DarkRiftWriter stateWriter = DarkRiftWriter.Create())
         {
             stateWriter.Write(ID);
             stateWriter.Write(stateTag);
 
-            using (Message positionMessage = Message.Create(PLAYER_STATE_TAG, stateWriter))
+            using (Message stateMessage = Message.Create(PLAYER_STATE_TAG, stateWriter))
             {
                 foreach (IClient c in loadedPlayers)
                 {
-                    c.SendMessage(positionMessage, SendMode.Reliable);
+                    c.SendMessage(stateMessage, SendMode.Reliable);
                     Debug.Log("Sent Player State Message");
                 }
+
             }
 
         }
@@ -756,22 +874,28 @@ public class VoxelServer : MonoBehaviour
             {
                 foreach (IClient c in XMLServer.Server.ClientManager.GetAllClients())
                 {
+
+                    //TO DO FIX THIS LOGIC
                     c.SendMessage(mapMessage, SendMode.Reliable);
 
-                    PlayerManager.PlayerDictionary[c.ID].GetComponent<Rigidbody>().velocity = Vector3.zero;
-                    PlayerManager.PlayerDictionary[c.ID].position = spawnPosition;
+                    if(PlayerManager.PlayerDictionary.ContainsKey(c.ID))
+                    {
+                        PlayerManager.PlayerDictionary[c.ID].transform.GetComponent<Rigidbody>().velocity = Vector3.zero;
+                        PlayerManager.PlayerDictionary[c.ID].transform.position = spawnPosition;
 
-                    loadedPlayers.Remove(c);
-                    
+                    }
+                    loadedPlayers.Remove(c);                    
                 }
-            }  
+
+            }
+
         }
     }
 
     public ushort GetRandomPlayer()
     {
         int numClients = loadedPlayers.Count;
-        int playerIndex = Random.Range(0, numClients);
+        int playerIndex = UnityEngine.Random.Range(0, numClients);
         if(numClients != 0)
         {
             return loadedPlayers[playerIndex].ID;
