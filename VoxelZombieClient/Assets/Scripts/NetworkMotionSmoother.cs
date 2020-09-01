@@ -18,8 +18,8 @@ public class NetworkMotionSmoother : MonoBehaviour
         {
             if(Vector3.Distance(transform.position, targetPosition) > .01)
             {
-                transform.position = Vector3.Lerp(transform.position, targetPosition, .2f);
-            }
+                transform.position = Vector3.Lerp(transform.position, targetPosition, .4f);
+           }
             else
             {
                 transform.position = targetPosition;
