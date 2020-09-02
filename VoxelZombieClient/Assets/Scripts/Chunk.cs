@@ -1025,6 +1025,13 @@ public class Chunk : MonoBehaviour
                     foreach (var tri in triangles)
                         TriangleLists[49].Add(vPos + tri);
                 }
+                else if(triangles == _bottomTriangles)
+                {
+                    foreach(var tri in triangles)
+                    {
+                        TriangleLists[2].Add(vPos + tri);
+                    }
+                }
                 else
                 {
                     foreach (var tri in triangles)

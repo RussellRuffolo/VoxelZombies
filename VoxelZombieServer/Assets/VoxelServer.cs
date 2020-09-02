@@ -477,56 +477,69 @@ public class VoxelServer : MonoBehaviour
 
     IEnumerator PostLoginAttempt(string name, string password, MessageReceivedEventArgs e)
     {
-        //get salt first
-        WWWForm saltForm = new WWWForm();
-        saltForm.AddField("name", name);
-        UnityWebRequest saltPost = UnityWebRequest.Post(saltURL, saltForm);
-        yield return saltPost.SendWebRequest();
-
-        string returnSaltText = saltPost.downloadHandler.text;
-
         string returnText = "";
 
-        if(returnSaltText.Length == 128)
+
+        if (!playerNames.ContainsValue(name))
         {
-            string saltString = returnSaltText.Substring(0, 64);
-            string hashedPassword = returnSaltText.Substring(64, 64);
+            //get salt first
+            WWWForm saltForm = new WWWForm();
+            saltForm.AddField("name", name);
+            UnityWebRequest saltPost = UnityWebRequest.Post(saltURL, saltForm);
+            yield return saltPost.SendWebRequest();
 
-            byte[] salt = StringToByteArray(saltString);
+            string returnSaltText = saltPost.downloadHandler.text;
 
-            //get the password as bytes
-            byte[] passwordBytes = System.Text.Encoding.UTF8.GetBytes(password);
+           
 
-            //prepend the salt to the password and hash the result
-            byte[] saltedPassword = CombineByteArrays(salt, passwordBytes);
-            byte[] hashValue;
-
-            using (SHA256 mySHA256 = SHA256.Create())
+            if (returnSaltText.Length == 128)
             {
-                hashValue = mySHA256.ComputeHash(saltedPassword);
-            }
+                string saltString = returnSaltText.Substring(0, 64);
+                string hashedPassword = returnSaltText.Substring(64, 64);
 
-            string newHashedPassword = ByteArrayToString(hashValue);
+                byte[] salt = StringToByteArray(saltString);
 
-            if(newHashedPassword == hashedPassword)
-            {
-                returnText = "Login Succesful";
+                //get the password as bytes
+                byte[] passwordBytes = System.Text.Encoding.UTF8.GetBytes(password);
+
+                //prepend the salt to the password and hash the result
+                byte[] saltedPassword = CombineByteArrays(salt, passwordBytes);
+                byte[] hashValue;
+
+                using (SHA256 mySHA256 = SHA256.Create())
+                {
+                    hashValue = mySHA256.ComputeHash(saltedPassword);
+                }
+
+                string newHashedPassword = ByteArrayToString(hashValue);
+
+                if (newHashedPassword == hashedPassword)
+                {
+                    returnText = "Login Succesful";
+                }
+                else
+                {
+                    Debug.Log("New hashed password: " + newHashedPassword + " in db: " + hashedPassword);
+                    returnText = "Password Mismatch";
+                }
+
             }
             else
             {
-                Debug.Log("New hashed password: " + newHashedPassword + " in db: " + hashedPassword);
-                returnText = "Password Mismatch";
+                Debug.Log("Error: " + saltPost.downloadHandler.text);
+                if (saltPost.downloadHandler.text == "No Username")
+                {
+                    returnText = "No Username";
+                }
             }
 
         }
         else
         {
-            Debug.Log("Error: " + saltPost.downloadHandler.text);
-            if(saltPost.downloadHandler.text == "No Username")
-            {
-                returnText = "No Username";
-            }
+            returnText = "No Username";
         }
+
+        
 
 
         
@@ -944,7 +957,7 @@ public class VoxelServer : MonoBehaviour
                 foreach (IClient c in XMLServer.Server.ClientManager.GetAllClients())
                 {
 
-                    //TO DO FIX THIS LOGIC
+              
                     c.SendMessage(mapMessage, SendMode.Reliable);
 
                     if(PlayerManager.PlayerDictionary.ContainsKey(c.ID))

@@ -25,6 +25,7 @@ namespace Client
 
         public Canvas loginCanvas;
         public Canvas chatCanvas;
+        public Canvas targeterCanvas;
 
         private ClientChatManager cManager;
 
@@ -55,6 +56,7 @@ namespace Client
 
                         cManager.enabled = true;
                         chatCanvas.enabled = true;
+                        targeterCanvas.enabled = true;
                         Destroy(loginCanvas.gameObject); //login Canvas generated errors after being disabled                
              
 

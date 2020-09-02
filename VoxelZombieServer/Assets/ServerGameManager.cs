@@ -171,6 +171,7 @@ public class ServerGameManager : MonoBehaviour
         {
             vServer.UpdatePlayerState(newZombie, 1);
             vServer.SendPublicChat("The Infection restarts with " + vServer.playerNames[newZombie] + "!", 2);
+            CheckZombieWin();
         }
 
     }
