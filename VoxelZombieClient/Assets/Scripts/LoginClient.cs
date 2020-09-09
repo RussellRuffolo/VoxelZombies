@@ -42,6 +42,8 @@ namespace Client
             accountCreatedText.enabled = false;
             usernameNotExistText.enabled = false;
 
+            targeterCanvas.enabled = false;
+
         }
 
         private void MessageReceived(object sender, MessageReceivedEventArgs e)

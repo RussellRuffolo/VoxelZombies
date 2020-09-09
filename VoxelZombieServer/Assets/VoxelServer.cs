@@ -187,12 +187,13 @@ public class VoxelServer : MonoBehaviour
                 switch(commands[0])
                 {
                     case "/vote":
-                        if(commands.Length > 1)
+                        if(gManager.inVoteTime)
                         {
-                            string mapName = commands[1];
-                            if(gManager.inVoteTime)
+                            
+                            if(commands.Length > 1)
                             {
-                                if(gManager.AddVote(mapName))
+                                string mapName = commands[1];
+                                if (gManager.AddVote(mapName))
                                 {
                                     SendPrivateChat("Your vote for " + mapName + " has been recorded. Thanks for voting!", 2, e.Client.ID);
                                 }
@@ -203,8 +204,13 @@ public class VoxelServer : MonoBehaviour
                             }
                             else
                             {
-                                SendPrivateChat("Map voting is closed until the end of the round.", 2, e.Client.ID);
+                                SendPrivateChat("Improper format, use: /vote [MapName] or /vote #", 2, e.Client.ID);
                             }
+                           
+                        }
+                        else
+                        {
+                            SendPrivateChat("Map voting is closed until the end of the round.", 2, e.Client.ID);
                         }
                         break;
                     case "/message":
@@ -242,8 +248,10 @@ public class VoxelServer : MonoBehaviour
                             int deaths = PlayerManager.PlayerDictionary[e.Client.ID].deaths;
                             int roundsWon = PlayerManager.PlayerDictionary[e.Client.ID].roundsWon;
                             int timeOnline = PlayerManager.PlayerDictionary[e.Client.ID].timeOnline + (int)(Time.time - PlayerManager.PlayerDictionary[e.Client.ID].timeJoined);
-
-                            SendPrivateChat(name + "'s stats: \nKills: " + kills + "\nDeaths: " + deaths + "\nRounds Won: " + roundsWon + "\nTime Online: " + timeOnline, 2, e.Client.ID);
+                            int hours = timeOnline / 3600;
+                            int minutes = (timeOnline - hours * 3600) / 60;
+                            int seconds = timeOnline % 60;
+                            SendPrivateChat(name + "'s stats: \nKills: " + kills + "\nDeaths: " + deaths + "\nRounds Won: " + roundsWon + "\nTime Online: " + hours + " hours, " + minutes + " minutes, " + seconds + " seconds.", 2, e.Client.ID);
 
                         }
                         else if(commands.Length == 2)
@@ -257,8 +265,11 @@ public class VoxelServer : MonoBehaviour
                                 int deaths = PlayerManager.PlayerDictionary[ID].deaths;
                                 int roundsWon = PlayerManager.PlayerDictionary[ID].roundsWon;
                                 int timeOnline = PlayerManager.PlayerDictionary[ID].timeOnline + (int)(Time.time - PlayerManager.PlayerDictionary[e.Client.ID].timeJoined);
+                                int hours = timeOnline / 3600;
+                                int minutes = (timeOnline - hours * 3600) / 60;
+                                int seconds = timeOnline % 60;
 
-                                SendPrivateChat(playerName + "'s stats: \nKills: " + kills + "\nDeaths: " + deaths + "\nRounds Won: " + roundsWon + "\nTime Online: " + timeOnline, 2, e.Client.ID);
+                                SendPrivateChat(playerName + "'s stats: \nKills: " + kills + "\nDeaths: " + deaths + "\nRounds Won: " + roundsWon + "\nTime Online: " + hours + " hours, " + minutes + " minutes, " + seconds + " seconds.", 2, e.Client.ID);
                             }
                             else
                             {
@@ -272,7 +283,7 @@ public class VoxelServer : MonoBehaviour
                         }
                         break;
                     case "/commands":
-                        SendPrivateChat("The available commands are: /vote, and /message", 2, e.Client.ID);
+                        SendPrivateChat("The available commands are: /vote, /stats, and /message", 2, e.Client.ID);
                         break;
                     default:
                         SendPrivateChat("The command: " + commands[0] + " does not exist. Use /commands to see available commands.", 2, e.Client.ID);

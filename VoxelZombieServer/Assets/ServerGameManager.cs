@@ -178,17 +178,17 @@ public class ServerGameManager : MonoBehaviour
 
     public bool AddVote(string mapName)
     {
-        if(mapName == map1.Name)
+        if(mapName == map1.Name || mapName == "1")
         {
             map1Votes++;
             return true;
         }
-        else if(mapName == map2.Name)
+        else if(mapName == map2.Name || mapName == "2")
         {
             map2Votes++;
             return true;
         }
-        else if(mapName == map3.Name)
+        else if(mapName == map3.Name || mapName == "3")
         {
             map3Votes++;
             return true;

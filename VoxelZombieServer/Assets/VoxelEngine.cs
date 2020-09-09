@@ -71,14 +71,14 @@ public class VoxelEngine : MonoBehaviour
          MapData Carson = new MapData("carson",  10, 35.5f, 120);
           mapList.Add(Carson);    
 
-         MapData Sunspots = new MapData("Sunspots",  60, 112.5f, 108);
-         mapList.Add(Sunspots);
+        // MapData Sunspots = new MapData("Sunspots",  60, 112.5f, 108);
+         //mapList.Add(Sunspots);
 
         MapData hawaii = new MapData("hawaiiMod",  1, 67.5f, 43);
        mapList.Add(hawaii);
 
-        MapData clockwork = new MapData("clockwork", 20, 238, 3);
-        mapList.Add(clockwork);
+      //  MapData clockwork = new MapData("clockwork", 20, 238, 3);
+      //  mapList.Add(clockwork);
 
         //   MapData colony = new MapData("colony", 56, 67.5f, 8);
         //  mapList.Add(colony);
