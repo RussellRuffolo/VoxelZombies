@@ -110,6 +110,8 @@ namespace Client
                 using (DarkRiftWriter InputWriter = DarkRiftWriter.Create())
                 {
                     InputWriter.Write(numInputs);
+                    InputWriter.Write(rotationY);
+
                     for (int i = index; i < index + numInputs; i++)
                     {
                         InputWriter.Write(LoggedInputs[i % 1024].MoveVector.x);

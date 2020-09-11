@@ -721,7 +721,7 @@ MonoBehaviour:
   m_EditorClassIdentifier: 
   loadedFirstMap: 0
   Client: {fileID: 0}
-  NetworkPlayerPrefab: {fileID: 8160126559506472237, guid: 1321e96508ff24e4485bf40d1ca62f72,
+  NetworkPlayerPrefab: {fileID: 4552662591371424641, guid: 204d47e9688fd2b48a5384b6c7d189bf,
     type: 3}
   LocalPlayerPrefab: {fileID: 6218928733261965679, guid: 0c98dbbf39b92e742b203e7cd3deca4e,
     type: 3}

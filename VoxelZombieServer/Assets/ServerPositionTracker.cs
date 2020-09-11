@@ -7,6 +7,7 @@ public class ServerPositionTracker : MonoBehaviour
 {
     public float minMoveDelta;
     private Vector3 lastPosition;
+    private float lastRotation;
     public ushort ID;
 
     VoxelServer vServer;
@@ -31,6 +32,7 @@ public class ServerPositionTracker : MonoBehaviour
     private void Awake()
     {
         lastPosition = transform.position;
+        lastRotation = 0;
 
         vServer = GameObject.FindGameObjectWithTag("Network").GetComponent<VoxelServer>();
         pManager = GameObject.FindGameObjectWithTag("Network").GetComponent<ServerPlayerManager>();
@@ -44,10 +46,11 @@ public class ServerPositionTracker : MonoBehaviour
     private void FixedUpdate()
     {    
 
-          if (Vector3.Distance(lastPosition, transform.position) > minMoveDelta)
+          if (Vector3.Distance(lastPosition, transform.position) > minMoveDelta || pManager.PlayerDictionary[ID].yRotation != lastRotation)
           {            
-             vServer.SendPositionUpdate(ID, transform.position);
+             vServer.SendPositionUpdate(ID, transform.position, pManager.PlayerDictionary[ID].yRotation);
              lastPosition = transform.position;
+            lastRotation = pManager.PlayerDictionary[ID].yRotation;
           }
 
     }

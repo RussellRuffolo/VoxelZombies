@@ -853,7 +853,7 @@ public class VoxelServer : MonoBehaviour
         }
     }
 
-    public void SendPositionUpdate(ushort id, Vector3 newPosition)
+    public void SendPositionUpdate(ushort id, Vector3 newPosition, float yRot)
     {
         using (DarkRiftWriter positionWriter = DarkRiftWriter.Create())
         {
@@ -862,6 +862,10 @@ public class VoxelServer : MonoBehaviour
             positionWriter.Write(newPosition.x);
             positionWriter.Write(newPosition.y);
             positionWriter.Write(newPosition.z);
+
+            positionWriter.Write(yRot);
+           
+            positionWriter.Write(PlayerManager.PlayerDictionary[id].inWater);
 
             using (Message positionMessage = Message.Create(OTHER_POSITION_TAG, positionWriter))
             {

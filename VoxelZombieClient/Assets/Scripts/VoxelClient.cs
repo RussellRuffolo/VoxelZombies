@@ -219,11 +219,13 @@ namespace Client
 
                                 if (StateTag == 0)
                                 {
-                                    NetworkPlayer.GetComponent<MeshRenderer>().material.color = Color.white;
+                                    NetworkPlayer.GetComponentInChildren<MeshRenderer>().material.color = Color.white;
+                                    NetworkPlayer.GetComponent<NetworkMotionSmoother>().playerAnim.SetBool("IsHuman", true);
                                 }
                                 else
                                 {
-                                    NetworkPlayer.GetComponent<MeshRenderer>().material.color = Color.red;
+                                    NetworkPlayer.GetComponentInChildren<MeshRenderer>().material.color = Color.red;
+                                    NetworkPlayer.GetComponent<NetworkMotionSmoother>().playerAnim.SetBool("IsHuman", false);
                                 }
 
                                 NetworkPlayerDictionary.Add(PlayerID, NetworkPlayer.transform);
@@ -272,13 +274,15 @@ namespace Client
                         if (stateTag == 0)
                         {
                             newColor = Color.white;
+                            NetworkPlayer.GetComponent<NetworkMotionSmoother>().playerAnim.SetBool("IsHuman", true);
                         }
                         else
                         {
                             newColor = Color.red;
+                            NetworkPlayer.GetComponent<NetworkMotionSmoother>().playerAnim.SetBool("IsHuman", false);
                         }
 
-                        NetworkPlayer.GetComponent<MeshRenderer>().material.color = newColor;
+                        NetworkPlayer.GetComponentInChildren<MeshRenderer>().material.color = newColor;
                         NetworkPlayerDictionary.Add(PlayerID, NetworkPlayer.transform);
                     }                   
 
@@ -441,17 +445,20 @@ namespace Client
                 float y = reader.ReadSingle();
                 float z = reader.ReadSingle();
 
+                float yRot = reader.ReadSingle();
+                Debug.Log("Recieved rotation " + yRot);
+                bool inWater = reader.ReadBoolean();
 
                 Vector3 position = new Vector3(x, y, z);
 
           
                 if (NetworkPlayerDictionary.ContainsKey(ID))
                 {
-                    NetworkPlayerDictionary[ID].GetComponent<NetworkMotionSmoother>().SetTargetPosition(position);
+                    NetworkPlayerDictionary[ID].GetComponent<NetworkMotionSmoother>().SetValues(position, yRot, inWater);
                 }
                 else
                 {
-                    Debug.LogError("No Network Player corresponds to given ID: " + ID);
+                    Debug.Log("No Network Player corresponds to given ID: " + ID);
                 }
 
          
@@ -495,7 +502,17 @@ namespace Client
                 {
                     if (NetworkPlayerDictionary.ContainsKey(ID))
                     {
-                        NetworkPlayerDictionary[ID].GetComponent<MeshRenderer>().material.color = newColor;
+                        NetworkPlayerDictionary[ID].GetComponentInChildren<MeshRenderer>().material.color = newColor;
+                        if(stateTag == 0)
+                        {
+                            NetworkPlayerDictionary[ID].GetComponent<NetworkMotionSmoother>().playerAnim.SetBool("IsHuman", true);
+
+                        }
+                        else
+                        {
+                            NetworkPlayerDictionary[ID].GetComponent<NetworkMotionSmoother>().playerAnim.SetBool("IsHuman", false);
+                        }
+                        
                     }
                     else
                     {

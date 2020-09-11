@@ -4,6 +4,7 @@ using fNbt;
 using System.IO;
 using UnityEngine;
 using UnityEngine.SceneManagement;
+using UnityEditor;
 
 public class ClientVoxelEngine : MonoBehaviour
 {
@@ -22,6 +23,7 @@ public class ClientVoxelEngine : MonoBehaviour
         }
 
         LoadMap("asylum");
+
     }
 
     public void LoadMap(string mapName)
@@ -69,6 +71,7 @@ public class ClientVoxelEngine : MonoBehaviour
                     var newChunkObj = new GameObject(namePrefix + x.ToString() + "," + y.ToString() + "," + z.ToString());
                     newChunkObj.transform.position = new Vector3(x * 16, y * 16, z * 16);
 
+                 
 
                     var chunk = newChunkObj.AddComponent<Chunk>();
                     chunk.world = world;

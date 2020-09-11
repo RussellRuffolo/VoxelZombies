@@ -143,7 +143,10 @@ public class ServerPlayerManager : MonoBehaviour
 
             //number of inputs received from the client
             int numInputs = reader.ReadInt32();
-      
+
+            float yRotation = reader.ReadSingle();
+            PlayerDictionary[clientID].yRotation = yRotation;
+
             bool appliedInput = false;
             for(int i = 0; i < numInputs; i++)
             {
@@ -152,6 +155,9 @@ public class ServerPlayerManager : MonoBehaviour
                 bool Jump = reader.ReadBoolean();
 
                 int clientTickNum = reader.ReadInt32();
+              
+
+                
 
                 //If this input is from a later tick than the most recent
                 //Simulate the tick on the player with the clients inputs
@@ -202,6 +208,7 @@ public class ServerPlayerManager : MonoBehaviour
         inputs.moveState = playerTransform.GetComponent<ServerPositionTracker>().CheckPlayerState();
         if (inputs.moveState == 0) //normal movement
         {
+            PlayerDictionary[id].inWater = false;
             bool onGround = playerTransform.GetComponent<HalfBlockDetector>().CheckGrounded(); 
 
             if (onGround && yVel <= 0)
@@ -235,6 +242,7 @@ public class ServerPlayerManager : MonoBehaviour
         }
         else if (inputs.moveState == 1) //water movement
         {
+            PlayerDictionary[id].inWater = true;
             if (inputs.Jump)
             {
                 if(yVel >= verticalWaterMaxSpeed)
@@ -271,6 +279,7 @@ public class ServerPlayerManager : MonoBehaviour
         }
         else if(inputs.moveState == 3) //exiting water/lava
         {
+            PlayerDictionary[id].inWater = false;
             if(inputs.Jump && playerTransform.GetComponent<ServerPositionTracker>().CheckWaterJump())
             {
                 Debug.Log("Water Jump");
@@ -288,6 +297,7 @@ public class ServerPlayerManager : MonoBehaviour
         }
         else if(inputs.moveState == 4)//lava movement
         {
+            PlayerDictionary[id].inWater = true;
             if (inputs.Jump)
             {
                 if (yVel >= verticalLavaMaxSpeed)
@@ -358,6 +368,7 @@ public class PlayerInputs
 public class PlayerInformation
 {
     public Transform transform;
+    public float yRotation = 0;
     public string name;
     public ushort stateTag;
 
@@ -371,6 +382,8 @@ public class PlayerInformation
 
     //Time.time at time of initialization
     public float timeJoined = 0;
+
+    public bool inWater = false;
 
     public PlayerInformation(Transform t, string playerName, ushort tag)
     {
